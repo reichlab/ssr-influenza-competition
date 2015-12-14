@@ -14,8 +14,9 @@ args <- commandArgs(trailingOnly=TRUE)
 data_set <- args[1]
 prediction_horizon_limit <- as.integer(args[2])
 
-if(identical(data_set, "San_Juan")) {
-    data <- San_Juan_train
+## load dataset
+if(identical(data_set, "ili_national")) {
+    data <- ili_national_1997_to_2015
 } else {
     data <- Iquitos_train
 }
