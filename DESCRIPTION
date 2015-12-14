@@ -1,8 +1,11 @@
-Package: ssr
-Title: What the Package Does (one line, title case)
-Version: 0.0.0.9000
-Authors@R: person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph)
+Package: ssrFlu
+Title: Runs state-space reconstruction for CDC flu challenge
+Version: 0.0.1
+Authors@R: c(
+    person(c("Evan", "L."), "Ray", , "elray@umass.edu", role = c("aut", "cre")), 
+    person(c("Nicholas", "G."), "Reich", , "elray@umass.edu", role = c("aut"))
+    )
+Description: Runs state-space reconstruction for CDC flu challenge
 Depends: R (>= 3.0.2)
-License: What license is it under?
+License: GPLv3
 LazyData: true
