@@ -1,2 +1,2 @@
 exportPattern("^[^\\.]")
-useDynLib(ssr, .registration = TRUE)
+useDynLib(ssrFlu, .registration = TRUE)
