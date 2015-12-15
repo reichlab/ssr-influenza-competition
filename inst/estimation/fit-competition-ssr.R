@@ -54,6 +54,10 @@ if(identical(data_set, "ili_region10")) {
 ## add log column
 data$log_total_cases <- log(data$total_cases + 1)
 
+## add week_start_date
+char_dates <- paste(data$year, data$week, "0")
+data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+
 ## add smooth log column
 sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span=12 / nrow(data))
 data$smooth_log_cases <- sm$fitted
