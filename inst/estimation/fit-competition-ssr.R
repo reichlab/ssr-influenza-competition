@@ -16,10 +16,40 @@ prediction_horizon_limit <- as.integer(args[2])
 
 ## load dataset
 if(identical(data_set, "ili_national")) {
-    data <- ili_national_1997_to_2015
-} else {
-    data <- Iquitos_train
-}
+    data <- ili_national
+} 
+if(identical(data_set, "ili_region1")) {
+    data <- ili_region1
+} 
+if(identical(data_set, "ili_region2")) {
+    data <- ili_region2
+} 
+if(identical(data_set, "ili_region3")) {
+    data <- ili_region3
+} 
+if(identical(data_set, "ili_region4")) {
+    data <- ili_region4
+} 
+if(identical(data_set, "ili_region5")) {
+    data <- ili_region5
+} 
+if(identical(data_set, "ili_region6")) {
+    data <- ili_region6
+} 
+if(identical(data_set, "ili_region7")) {
+    data <- ili_region7
+} 
+if(identical(data_set, "ili_region8")) {
+    data <- ili_region8
+} 
+if(identical(data_set, "ili_region9")) {
+    data <- ili_region9
+} 
+if(identical(data_set, "ili_region10")) {
+    data <- ili_region10
+} 
+
+
 
 ## add log column
 data$log_total_cases <- log(data$total_cases + 1)
@@ -67,4 +97,4 @@ ssr_fit <- ssr(X_names=c("smooth_log_cases", "time_ind"),
     ssr_control=ssr_control)
 
 save(ssr_fit,
-    file=paste0("/home/er71a/ssr-poster/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
+    file=paste0("/home/ngr67a/2015-cdc-flu-competition/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
