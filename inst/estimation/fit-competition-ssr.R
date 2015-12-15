@@ -4,7 +4,7 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 library(reshape)
-library(ssr)
+library(ssrFlu)
 library(doMC)
 
 registerDoMC(cores=3)
