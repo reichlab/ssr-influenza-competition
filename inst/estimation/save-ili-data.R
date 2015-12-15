@@ -11,7 +11,7 @@ ili_national <- transmute(usflu,
                            region = REGION,
                            year = YEAR,
                            week = WEEK,
-                           total_cases = X..WEIGHTED.ILI)
+                           total_cases = as.numeric(X..WEIGHTED.ILI))
 save(ili_national, file='data/ili-national-1997-to-2015.rda')
 
 regionflu<-get_flu_data("HHS", sub_region=1:10, "ilinet", years=1997:2015)
@@ -20,7 +20,7 @@ regionflu_to_save <- transmute(regionflu,
                                region = REGION,
                                year = YEAR,
                                week = WEEK,
-                               total_cases = X..WEIGHTED.ILI)
+                               total_cases = as.numeric(X..WEIGHTED.ILI))
 
 ## save each region separately
 ili_region1 <- dplyr::filter(regionflu_to_save, region == "Region 1")

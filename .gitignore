@@ -3,3 +3,6 @@
 .RData
 
 *.Rproj
+
+src/ssrFlu.so
+src/utility.o
