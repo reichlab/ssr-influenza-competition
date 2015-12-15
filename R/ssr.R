@@ -253,7 +253,7 @@ est_ssr_params_stepwise_crossval <- function(data, ssr_control) {
         
         ## commented out use of foreach for debugging purposes
         crossval_results <- foreach(i=seq_along(all_lags_as_list),
-            .packages=c("ssr", ssr_control$par_packages),
+            .packages=c("ssrFlu", ssr_control$par_packages),
             .combine="c") %dopar% {
 #        crossval_results <- lapply(seq_along(all_lags_as_list), function(i) {
             if(length(selected_var_lag_ind) > 0 && i == selected_var_lag_ind) {
