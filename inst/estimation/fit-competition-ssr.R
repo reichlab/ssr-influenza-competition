@@ -57,18 +57,17 @@ data$log_total_cases <- log(data$total_cases + 1)
 ## add week_start_date
 char_dates <- paste(data$year, data$week, "1")
 data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+
 ## remove week 53s
 data <- data[-which(is.na(data$week_start_date)),]
+data <- data[262:nrow(data),]
 
 ## add smooth log column -- or not, since it is already pretty smooth...
-#sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span=52 / nrow(data))
-data$smooth_log_cases <- log(data$total_cases+1)
+sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+data$smooth_log_cases <- sm$fitted
 
 ## add time column
 data$time_ind <- seq_len(nrow(data))
-
-
-
 
 ssr_control <- create_ssr_control(X_names=c("smooth_log_cases", "time_ind"),
     y_names="total_cases",
