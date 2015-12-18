@@ -1,0 +1,446 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> cores_req <- "3"
+> mem_req <- "1000"
+> time_req <- "4:00"
+> queue_req <- "short"
+> lsfoutfilename <- "lag1.out"
+> 
+> files_path <- file.path("/home", "ngr67a", "ssr-influenza-competition")
+> 
+> requestCmds <- "#!/bin/bash\n"
+> 
+> requestCmds <- paste0(requestCmds, "#BSUB -n ", cores_req, " # how many cores we want for our job\n",
++ 	"#BSUB -R span[hosts=1] # ask for all the cores on a single machine\n",
++ 	"#BSUB -R rusage[mem=", mem_req, "] # ask for memory\n",
++ 	"#BSUB -o ", lsfoutfilename, " # log LSF output to a file\n",
++ 	"#BSUB -W ", time_req, " # run time\n",
++ 	"#BSUB -q ", queue_req, " # which queue we want to run in\n")
+> 
+> phs <- 1:35
+> datasets <- c("ili_national",
++               paste0("ili_region", 1:10))
+> for(data_set in datasets) {
++     for(prediction_horizon_limit in phs) {
++         filename <- paste0(files_path, "/submit-ph", prediction_horizon_limit, "-", data_set, ".sh")
++         
++         cat(requestCmds, file = filename)
++         cat("module load R/3.2.1\n", file = filename, append = TRUE)
++         cat(paste0("R CMD BATCH --vanilla \'--args ", data_set, " ", 
++                    prediction_horizon_limit,
++                    "\' ", files_path, 
++                    "/inst/estimation/fit-competition-ssr.R output-competition-ssr-ph", 
++                    prediction_horizon_limit, "-", data_set, ".Rout"),
++             file = filename, append = TRUE)
++ 
++         bsubCmd <- paste0("bsub < ", filename)
++ 
++         system(bsubCmd)
++     }
++ }
+Job <5388369> is submitted to queue <short>.
+Job <5388370> is submitted to queue <short>.
+Job <5388371> is submitted to queue <short>.
+Job <5388372> is submitted to queue <short>.
+Job <5388373> is submitted to queue <short>.
+Job <5388374> is submitted to queue <short>.
+Job <5388375> is submitted to queue <short>.
+Job <5388376> is submitted to queue <short>.
+Job <5388377> is submitted to queue <short>.
+Job <5388378> is submitted to queue <short>.
+Job <5388379> is submitted to queue <short>.
+Job <5388380> is submitted to queue <short>.
+Job <5388381> is submitted to queue <short>.
+Job <5388382> is submitted to queue <short>.
+Job <5388383> is submitted to queue <short>.
+Job <5388384> is submitted to queue <short>.
+Job <5388385> is submitted to queue <short>.
+Job <5388386> is submitted to queue <short>.
+Job <5388387> is submitted to queue <short>.
+Job <5388388> is submitted to queue <short>.
+Job <5388389> is submitted to queue <short>.
+Job <5388390> is submitted to queue <short>.
+Job <5388391> is submitted to queue <short>.
+Job <5388392> is submitted to queue <short>.
+Job <5388393> is submitted to queue <short>.
+Job <5388394> is submitted to queue <short>.
+Job <5388395> is submitted to queue <short>.
+Job <5388396> is submitted to queue <short>.
+Job <5388397> is submitted to queue <short>.
+Job <5388398> is submitted to queue <short>.
+Job <5388399> is submitted to queue <short>.
+Job <5388400> is submitted to queue <short>.
+Job <5388401> is submitted to queue <short>.
+Job <5388402> is submitted to queue <short>.
+Job <5388403> is submitted to queue <short>.
+Job <5388404> is submitted to queue <short>.
+Job <5388405> is submitted to queue <short>.
+Job <5388406> is submitted to queue <short>.
+Job <5388407> is submitted to queue <short>.
+Job <5388408> is submitted to queue <short>.
+Job <5388409> is submitted to queue <short>.
+Job <5388410> is submitted to queue <short>.
+Job <5388411> is submitted to queue <short>.
+Job <5388412> is submitted to queue <short>.
+Job <5388413> is submitted to queue <short>.
+Job <5388414> is submitted to queue <short>.
+Job <5388415> is submitted to queue <short>.
+Job <5388416> is submitted to queue <short>.
+Job <5388417> is submitted to queue <short>.
+Job <5388418> is submitted to queue <short>.
+Job <5388419> is submitted to queue <short>.
+Job <5388420> is submitted to queue <short>.
+Job <5388421> is submitted to queue <short>.
+Job <5388422> is submitted to queue <short>.
+Job <5388423> is submitted to queue <short>.
+Job <5388424> is submitted to queue <short>.
+Job <5388425> is submitted to queue <short>.
+Job <5388426> is submitted to queue <short>.
+Job <5388427> is submitted to queue <short>.
+Job <5388428> is submitted to queue <short>.
+Job <5388429> is submitted to queue <short>.
+Job <5388430> is submitted to queue <short>.
+Job <5388431> is submitted to queue <short>.
+Job <5388432> is submitted to queue <short>.
+Job <5388433> is submitted to queue <short>.
+Job <5388434> is submitted to queue <short>.
+Job <5388435> is submitted to queue <short>.
+Job <5388436> is submitted to queue <short>.
+Job <5388438> is submitted to queue <short>.
+Job <5388439> is submitted to queue <short>.
+Job <5388440> is submitted to queue <short>.
+Job <5388441> is submitted to queue <short>.
+Job <5388442> is submitted to queue <short>.
+Job <5388443> is submitted to queue <short>.
+Job <5388444> is submitted to queue <short>.
+Job <5388445> is submitted to queue <short>.
+Job <5388446> is submitted to queue <short>.
+Job <5388447> is submitted to queue <short>.
+Job <5388448> is submitted to queue <short>.
+Job <5388449> is submitted to queue <short>.
+Job <5388450> is submitted to queue <short>.
+Job <5388451> is submitted to queue <short>.
+Job <5388452> is submitted to queue <short>.
+Job <5388453> is submitted to queue <short>.
+Job <5388454> is submitted to queue <short>.
+Job <5388455> is submitted to queue <short>.
+Job <5388456> is submitted to queue <short>.
+Job <5388457> is submitted to queue <short>.
+Job <5388458> is submitted to queue <short>.
+Job <5388459> is submitted to queue <short>.
+Job <5388460> is submitted to queue <short>.
+Job <5388461> is submitted to queue <short>.
+Job <5388462> is submitted to queue <short>.
+Job <5388463> is submitted to queue <short>.
+Job <5388464> is submitted to queue <short>.
+Job <5388465> is submitted to queue <short>.
+Job <5388466> is submitted to queue <short>.
+Job <5388467> is submitted to queue <short>.
+Job <5388468> is submitted to queue <short>.
+Job <5388469> is submitted to queue <short>.
+Job <5388470> is submitted to queue <short>.
+Job <5388471> is submitted to queue <short>.
+Job <5388472> is submitted to queue <short>.
+Job <5388473> is submitted to queue <short>.
+Job <5388474> is submitted to queue <short>.
+Job <5388475> is submitted to queue <short>.
+Job <5388476> is submitted to queue <short>.
+Job <5388477> is submitted to queue <short>.
+Job <5388478> is submitted to queue <short>.
+Job <5388479> is submitted to queue <short>.
+Job <5388480> is submitted to queue <short>.
+Job <5388481> is submitted to queue <short>.
+Job <5388482> is submitted to queue <short>.
+Job <5388483> is submitted to queue <short>.
+Job <5388484> is submitted to queue <short>.
+Job <5388485> is submitted to queue <short>.
+Job <5388486> is submitted to queue <short>.
+Job <5388487> is submitted to queue <short>.
+Job <5388488> is submitted to queue <short>.
+Job <5388489> is submitted to queue <short>.
+Job <5388490> is submitted to queue <short>.
+Job <5388491> is submitted to queue <short>.
+Job <5388492> is submitted to queue <short>.
+Job <5388493> is submitted to queue <short>.
+Job <5388494> is submitted to queue <short>.
+Job <5388495> is submitted to queue <short>.
+Job <5388496> is submitted to queue <short>.
+Job <5388497> is submitted to queue <short>.
+Job <5388498> is submitted to queue <short>.
+Job <5388499> is submitted to queue <short>.
+Job <5388500> is submitted to queue <short>.
+Job <5388501> is submitted to queue <short>.
+Job <5388502> is submitted to queue <short>.
+Job <5388503> is submitted to queue <short>.
+Job <5388504> is submitted to queue <short>.
+Job <5388505> is submitted to queue <short>.
+Job <5388506> is submitted to queue <short>.
+Job <5388507> is submitted to queue <short>.
+Job <5388508> is submitted to queue <short>.
+Job <5388509> is submitted to queue <short>.
+Job <5388510> is submitted to queue <short>.
+Job <5388511> is submitted to queue <short>.
+Job <5388512> is submitted to queue <short>.
+Job <5388513> is submitted to queue <short>.
+Job <5388514> is submitted to queue <short>.
+Job <5388515> is submitted to queue <short>.
+Job <5388516> is submitted to queue <short>.
+Job <5388517> is submitted to queue <short>.
+Job <5388518> is submitted to queue <short>.
+Job <5388519> is submitted to queue <short>.
+Job <5388520> is submitted to queue <short>.
+Job <5388521> is submitted to queue <short>.
+Job <5388522> is submitted to queue <short>.
+Job <5388523> is submitted to queue <short>.
+Job <5388524> is submitted to queue <short>.
+Job <5388525> is submitted to queue <short>.
+Job <5388526> is submitted to queue <short>.
+Job <5388527> is submitted to queue <short>.
+Job <5388528> is submitted to queue <short>.
+Job <5388529> is submitted to queue <short>.
+Job <5388530> is submitted to queue <short>.
+Job <5388531> is submitted to queue <short>.
+Job <5388532> is submitted to queue <short>.
+Job <5388533> is submitted to queue <short>.
+Job <5388534> is submitted to queue <short>.
+Job <5388535> is submitted to queue <short>.
+Job <5388536> is submitted to queue <short>.
+Job <5388537> is submitted to queue <short>.
+Job <5388538> is submitted to queue <short>.
+Job <5388539> is submitted to queue <short>.
+Job <5388540> is submitted to queue <short>.
+Job <5388541> is submitted to queue <short>.
+Job <5388542> is submitted to queue <short>.
+Job <5388543> is submitted to queue <short>.
+Job <5388544> is submitted to queue <short>.
+Job <5388545> is submitted to queue <short>.
+Job <5388546> is submitted to queue <short>.
+Job <5388547> is submitted to queue <short>.
+Job <5388548> is submitted to queue <short>.
+Job <5388549> is submitted to queue <short>.
+Job <5388550> is submitted to queue <short>.
+Job <5388551> is submitted to queue <short>.
+Job <5388552> is submitted to queue <short>.
+Job <5388553> is submitted to queue <short>.
+Job <5388554> is submitted to queue <short>.
+Job <5388555> is submitted to queue <short>.
+Job <5388556> is submitted to queue <short>.
+Job <5388557> is submitted to queue <short>.
+Job <5388558> is submitted to queue <short>.
+Job <5388559> is submitted to queue <short>.
+Job <5388560> is submitted to queue <short>.
+Job <5388561> is submitted to queue <short>.
+Job <5388562> is submitted to queue <short>.
+Job <5388563> is submitted to queue <short>.
+Job <5388564> is submitted to queue <short>.
+Job <5388565> is submitted to queue <short>.
+Job <5388566> is submitted to queue <short>.
+Job <5388567> is submitted to queue <short>.
+Job <5388568> is submitted to queue <short>.
+Job <5388569> is submitted to queue <short>.
+Job <5388570> is submitted to queue <short>.
+Job <5388571> is submitted to queue <short>.
+Job <5388572> is submitted to queue <short>.
+Job <5388573> is submitted to queue <short>.
+Job <5388574> is submitted to queue <short>.
+Job <5388575> is submitted to queue <short>.
+Job <5388576> is submitted to queue <short>.
+Job <5388577> is submitted to queue <short>.
+Job <5388578> is submitted to queue <short>.
+Job <5388579> is submitted to queue <short>.
+Job <5388580> is submitted to queue <short>.
+Job <5388581> is submitted to queue <short>.
+Job <5388582> is submitted to queue <short>.
+Job <5388583> is submitted to queue <short>.
+Job <5388584> is submitted to queue <short>.
+Job <5388585> is submitted to queue <short>.
+Job <5388586> is submitted to queue <short>.
+Job <5388587> is submitted to queue <short>.
+Job <5388588> is submitted to queue <short>.
+Job <5388589> is submitted to queue <short>.
+Job <5388590> is submitted to queue <short>.
+Job <5388591> is submitted to queue <short>.
+Job <5388592> is submitted to queue <short>.
+Job <5388593> is submitted to queue <short>.
+Job <5388594> is submitted to queue <short>.
+Job <5388595> is submitted to queue <short>.
+Job <5388596> is submitted to queue <short>.
+Job <5388597> is submitted to queue <short>.
+Job <5388598> is submitted to queue <short>.
+Job <5388599> is submitted to queue <short>.
+Job <5388600> is submitted to queue <short>.
+Job <5388601> is submitted to queue <short>.
+Job <5388602> is submitted to queue <short>.
+Job <5388603> is submitted to queue <short>.
+Job <5388604> is submitted to queue <short>.
+Job <5388606> is submitted to queue <short>.
+Job <5388607> is submitted to queue <short>.
+Job <5388608> is submitted to queue <short>.
+Job <5388609> is submitted to queue <short>.
+Job <5388610> is submitted to queue <short>.
+Job <5388611> is submitted to queue <short>.
+Job <5388612> is submitted to queue <short>.
+Job <5388613> is submitted to queue <short>.
+Job <5388614> is submitted to queue <short>.
+Job <5388615> is submitted to queue <short>.
+Job <5388616> is submitted to queue <short>.
+Job <5388617> is submitted to queue <short>.
+Job <5388618> is submitted to queue <short>.
+Job <5388619> is submitted to queue <short>.
+Job <5388620> is submitted to queue <short>.
+Job <5388621> is submitted to queue <short>.
+Job <5388622> is submitted to queue <short>.
+Job <5388623> is submitted to queue <short>.
+Job <5388624> is submitted to queue <short>.
+Job <5388625> is submitted to queue <short>.
+Job <5388626> is submitted to queue <short>.
+Job <5388627> is submitted to queue <short>.
+Job <5388628> is submitted to queue <short>.
+Job <5388629> is submitted to queue <short>.
+Job <5388630> is submitted to queue <short>.
+Job <5388631> is submitted to queue <short>.
+Job <5388632> is submitted to queue <short>.
+Job <5388633> is submitted to queue <short>.
+Job <5388634> is submitted to queue <short>.
+Job <5388635> is submitted to queue <short>.
+Job <5388636> is submitted to queue <short>.
+Job <5388637> is submitted to queue <short>.
+Job <5388638> is submitted to queue <short>.
+Job <5388639> is submitted to queue <short>.
+Job <5388640> is submitted to queue <short>.
+Job <5388641> is submitted to queue <short>.
+Job <5388642> is submitted to queue <short>.
+Job <5388643> is submitted to queue <short>.
+Job <5388644> is submitted to queue <short>.
+Job <5388645> is submitted to queue <short>.
+Job <5388646> is submitted to queue <short>.
+Job <5388647> is submitted to queue <short>.
+Job <5388648> is submitted to queue <short>.
+Job <5388649> is submitted to queue <short>.
+Job <5388650> is submitted to queue <short>.
+Job <5388651> is submitted to queue <short>.
+Job <5388652> is submitted to queue <short>.
+Job <5388653> is submitted to queue <short>.
+Job <5388654> is submitted to queue <short>.
+Job <5388655> is submitted to queue <short>.
+Job <5388656> is submitted to queue <short>.
+Job <5388657> is submitted to queue <short>.
+Job <5388658> is submitted to queue <short>.
+Job <5388659> is submitted to queue <short>.
+Job <5388660> is submitted to queue <short>.
+Job <5388661> is submitted to queue <short>.
+Job <5388662> is submitted to queue <short>.
+Job <5388663> is submitted to queue <short>.
+Job <5388664> is submitted to queue <short>.
+Job <5388665> is submitted to queue <short>.
+Job <5388666> is submitted to queue <short>.
+Job <5388667> is submitted to queue <short>.
+Job <5388668> is submitted to queue <short>.
+Job <5388669> is submitted to queue <short>.
+Job <5388670> is submitted to queue <short>.
+Job <5388671> is submitted to queue <short>.
+Job <5388672> is submitted to queue <short>.
+Job <5388674> is submitted to queue <short>.
+Job <5388675> is submitted to queue <short>.
+Job <5388676> is submitted to queue <short>.
+Job <5388677> is submitted to queue <short>.
+Job <5388678> is submitted to queue <short>.
+Job <5388679> is submitted to queue <short>.
+Job <5388680> is submitted to queue <short>.
+Job <5388681> is submitted to queue <short>.
+Job <5388682> is submitted to queue <short>.
+Job <5388683> is submitted to queue <short>.
+Job <5388684> is submitted to queue <short>.
+Job <5388685> is submitted to queue <short>.
+Job <5388686> is submitted to queue <short>.
+Job <5388687> is submitted to queue <short>.
+Job <5388688> is submitted to queue <short>.
+Job <5388689> is submitted to queue <short>.
+Job <5388690> is submitted to queue <short>.
+Job <5388691> is submitted to queue <short>.
+Job <5388692> is submitted to queue <short>.
+Job <5388693> is submitted to queue <short>.
+Job <5388694> is submitted to queue <short>.
+Job <5388695> is submitted to queue <short>.
+Job <5388696> is submitted to queue <short>.
+Job <5388697> is submitted to queue <short>.
+Job <5388698> is submitted to queue <short>.
+Job <5388699> is submitted to queue <short>.
+Job <5388700> is submitted to queue <short>.
+Job <5388701> is submitted to queue <short>.
+Job <5388702> is submitted to queue <short>.
+Job <5388703> is submitted to queue <short>.
+Job <5388704> is submitted to queue <short>.
+Job <5388705> is submitted to queue <short>.
+Job <5388706> is submitted to queue <short>.
+Job <5388707> is submitted to queue <short>.
+Job <5388708> is submitted to queue <short>.
+Job <5388709> is submitted to queue <short>.
+Job <5388710> is submitted to queue <short>.
+Job <5388711> is submitted to queue <short>.
+Job <5388712> is submitted to queue <short>.
+Job <5388713> is submitted to queue <short>.
+Job <5388714> is submitted to queue <short>.
+Job <5388715> is submitted to queue <short>.
+Job <5388716> is submitted to queue <short>.
+Job <5388717> is submitted to queue <short>.
+Job <5388718> is submitted to queue <short>.
+Job <5388719> is submitted to queue <short>.
+Job <5388720> is submitted to queue <short>.
+Job <5388721> is submitted to queue <short>.
+Job <5388722> is submitted to queue <short>.
+Job <5388723> is submitted to queue <short>.
+Job <5388724> is submitted to queue <short>.
+Job <5388725> is submitted to queue <short>.
+Job <5388726> is submitted to queue <short>.
+Job <5388727> is submitted to queue <short>.
+Job <5388728> is submitted to queue <short>.
+Job <5388729> is submitted to queue <short>.
+Job <5388730> is submitted to queue <short>.
+Job <5388731> is submitted to queue <short>.
+Job <5388732> is submitted to queue <short>.
+Job <5388733> is submitted to queue <short>.
+Job <5388734> is submitted to queue <short>.
+Job <5388735> is submitted to queue <short>.
+Job <5388736> is submitted to queue <short>.
+Job <5388737> is submitted to queue <short>.
+Job <5388738> is submitted to queue <short>.
+Job <5388739> is submitted to queue <short>.
+Job <5388740> is submitted to queue <short>.
+Job <5388741> is submitted to queue <short>.
+Job <5388742> is submitted to queue <short>.
+Job <5388743> is submitted to queue <short>.
+Job <5388744> is submitted to queue <short>.
+Job <5388745> is submitted to queue <short>.
+Job <5388746> is submitted to queue <short>.
+Job <5388747> is submitted to queue <short>.
+Job <5388748> is submitted to queue <short>.
+Job <5388749> is submitted to queue <short>.
+Job <5388750> is submitted to queue <short>.
+Job <5388751> is submitted to queue <short>.
+Job <5388752> is submitted to queue <short>.
+Job <5388753> is submitted to queue <short>.
+Job <5388754> is submitted to queue <short>.
+Job <5388755> is submitted to queue <short>.
+Job <5388756> is submitted to queue <short>.
+> 
+> proc.time()
+   user  system elapsed 
+  5.646   5.980  37.785 

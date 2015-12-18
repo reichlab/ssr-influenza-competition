@@ -1,0 +1,782 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### get ssr fit -- prediction horizons 1:52
+> library(lubridate)
+> library(ggplot2)
+> library(plyr)
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:lubridate’:
+
+    intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(reshape)
+
+Attaching package: ‘reshape’
+
+The following object is masked from ‘package:dplyr’:
+
+    rename
+
+The following objects are masked from ‘package:plyr’:
+
+    rename, round_any
+
+The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+> library(ssrFlu)
+> library(doMC)
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+> 
+> registerDoMC(cores=3)
+> 
+> args <- commandArgs(trailingOnly=TRUE)
+> 
+> data_set <- args[1]
+> prediction_horizon_limit <- as.integer(args[2])
+> 
+> ## load dataset
+> if(identical(data_set, "ili_national")) {
++     data <- ili_national
++ } 
+> if(identical(data_set, "ili_region1")) {
++     data <- ili_region1
++ } 
+> if(identical(data_set, "ili_region2")) {
++     data <- ili_region2
++ } 
+> if(identical(data_set, "ili_region3")) {
++     data <- ili_region3
++ } 
+> if(identical(data_set, "ili_region4")) {
++     data <- ili_region4
++ } 
+> if(identical(data_set, "ili_region5")) {
++     data <- ili_region5
++ } 
+> if(identical(data_set, "ili_region6")) {
++     data <- ili_region6
++ } 
+> if(identical(data_set, "ili_region7")) {
++     data <- ili_region7
++ } 
+> if(identical(data_set, "ili_region8")) {
++     data <- ili_region8
++ } 
+> if(identical(data_set, "ili_region9")) {
++     data <- ili_region9
++ } 
+> if(identical(data_set, "ili_region10")) {
++     data <- ili_region10
++ } 
+> 
+> 
+> 
+> ## add log column
+> data$log_total_cases <- log(data$total_cases + 1)
+> 
+> ## add week_start_date
+> char_dates <- paste(data$year, data$week, "1")
+> data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+> 
+> ## remove week 53s
+> data <- data[-which(is.na(data$week_start_date)),]
+> data <- data[262:nrow(data),]
+> 
+> ## add smooth log column -- or not, since it is already pretty smooth...
+> sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+> data$smooth_log_cases <- sm$fitted
+> 
+> ## add time column
+> data$time_ind <- seq_len(nrow(data))
+> 
+> ssr_control <- create_ssr_control(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     max_lag=list(smooth_log_cases=1,
++         time_ind=0),
++     prediction_horizons=as.integer(prediction_horizon_limit),
++     kernel_fns=list(smooth_log_cases="squared_exp_kernel",
++         time_ind="periodic_kernel"),
++     theta_est=list(smooth_log_cases="bw",
++         time_ind="bw"),
++     theta_fixed=list(time_ind=list(period=pi / 52)),
++     theta_transform_fns=list(
++         squared_exp_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         ),
++         periodic_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         )
++     ),
++     crossval_buffer=52,
++     loss_fn_name="mae_from_kernel_weights_and_centers",
++     loss_fn_args=list())
+> 
+> 
+> ssr_fit <- ssr(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     data=data,
++     ssr_control=ssr_control)
+610.8163FALSE
+464.2388FALSE
+618.3466FALSE
+610.8162FALSE
+464.2326FALSE
+618.346FALSE
+610.8164FALSE
+618.3474FALSE
+464.2449FALSE
+616.8875FALSE
+625.3438FALSE
+464.1663FALSE
+616.9009FALSE
+625.3572FALSE
+464.1892FALSE
+616.8741FALSE
+625.3304FALSE
+464.1434FALSE
+610.8159FALSE
+618.3487FALSE
+463.2391FALSE
+610.816FALSE
+618.3492FALSE
+463.2348FALSE
+610.8159FALSE
+618.3482FALSE
+463.2434FALSE
+610.8159FALSE
+618.3422FALSE
+461.7048FALSE
+610.8159FALSE
+618.3421FALSE
+461.7045FALSE
+610.8159FALSE
+618.3423FALSE
+461.705FALSE
+618.3421FALSE
+610.8159FALSE
+461.7102FALSE
+618.3423FALSE
+610.8159FALSE
+461.7109FALSE
+618.342FALSE
+610.8159FALSE
+$par
+smooth_log_cases_lag1.bw 
+               -2.294836 
+
+$value
+[1] 610.8159
+
+$counts
+function gradient 
+       5        5 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+461.7095FALSE
+618.3421FALSE
+461.7039FALSE
+461.704FALSE
+618.342FALSE
+461.7039FALSE
+618.3422FALSE
+461.7038FALSE
+461.7039FALSE
+618.3422FALSE
+461.7039FALSE
+461.7037FALSE
+618.3424FALSE
+461.7038FALSE
+461.704FALSE
+618.342FALSE
+461.7038FALSE
+461.7039FALSE
+618.342FALSE
+461.7039FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+618.3421FALSE
+461.7039FALSE
+461.7038FALSE
+618.342FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+461.7039FALSE
+618.3421FALSE
+461.7039FALSE
+461.7038FALSE
+618.342FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+461.7039FALSE
+618.342FALSE
+461.7038FALSE
+461.7039FALSE
+618.3421FALSE
+461.7039FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+461.7039FALSE
+618.342FALSE
+461.7038FALSE
+461.7039FALSE
+618.3421FALSE
+461.7039FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+618.342FALSE
+461.7039FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+461.7039FALSE
+618.342FALSE
+461.7039FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+618.342FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+461.7039FALSE
+618.3421FALSE
+461.7039FALSE
+461.7038FALSE
+618.342FALSE
+461.7039FALSE
+461.7039FALSE
+618.3421FALSE
+461.7038FALSE
+618.3421FALSE
+461.7039FALSE
+461.7039FALSE
+$par
+time_ind_lag0.bw 
+       -1.580993 
+
+$value
+[1] 461.7038
+
+$counts
+function gradient 
+      25       25 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+618.342FALSE
+618.3421FALSE
+618.3421FALSE
+$par
+smooth_log_cases_lag0.bw 
+               -2.285135 
+
+$value
+[1] 618.342
+
+$counts
+function gradient 
+      23       23 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+502.3704FALSE
+499.2415FALSE
+502.373FALSE
+499.2408FALSE
+502.3678FALSE
+502.3937FALSE
+499.2422FALSE
+502.3472FALSE
+499.2591FALSE
+495.5347FALSE
+499.224FALSE
+495.5507FALSE
+495.2286FALSE
+495.5184FALSE
+495.2458FALSE
+495.5293FALSE
+495.2116FALSE
+495.5399FALSE
+495.211FALSE
+495.3007FALSE
+495.2464FALSE
+495.287FALSE
+496.1352FALSE
+495.3142FALSE
+496.1381FALSE
+495.2894FALSE
+496.132FALSE
+495.3118FALSE
+496.1349FALSE
+491.6968FALSE
+496.1356FALSE
+491.6672FALSE
+495.4776FALSE
+491.7263FALSE
+491.7253FALSE
+495.4915FALSE
+491.6681FALSE
+495.4638FALSE
+491.8769FALSE
+495.4704FALSE
+491.898FALSE
+495.485FALSE
+491.8562FALSE
+493.9867FALSE
+491.8639FALSE
+493.9822FALSE
+491.8903FALSE
+493.9911FALSE
+491.553FALSE
+493.9912FALSE
+491.5646FALSE
+493.9822FALSE
+491.5418FALSE
+493.7484FALSE
+491.5451FALSE
+493.746FALSE
+491.5613FALSE
+493.7511FALSE
+507.1352FALSE
+493.7562FALSE
+507.0871FALSE
+493.7406FALSE
+507.1833FALSE
+493.3483FALSE
+507.1438FALSE
+493.3433FALSE
+507.1267FALSE
+493.3534FALSE
+493.5466FALSE
+493.3513FALSE
+493.5437FALSE
+493.3454FALSE
+493.5494FALSE
+493.5427FALSE
+496.0082FALSE
+493.5504FALSE
+496.0165FALSE
+492.0089FALSE
+495.9996FALSE
+491.9818FALSE
+496.0044FALSE
+492.0358FALSE
+496.0118FALSE
+492.0346FALSE
+493.2281FALSE
+491.9829FALSE
+493.2309FALSE
+491.5376FALSE
+493.2253FALSE
+491.5487FALSE
+491.5425FALSE
+493.2246FALSE
+491.542FALSE
+493.2319FALSE
+491.5454FALSE
+493.1983FALSE
+491.5251FALSE
+493.1982FALSE
+491.5368FALSE
+493.1985FALSE
+491.5139FALSE
+493.1997FALSE
+491.5171FALSE
+493.1972FALSE
+491.5335FALSE
+493.1861FALSE
+491.5005FALSE
+491.513FALSE
+493.1859FALSE
+491.4885FALSE
+493.1871FALSE
+491.4886FALSE
+493.1865FALSE
+491.5129FALSE
+493.1868FALSE
+491.5075FALSE
+493.1892FALSE
+491.5201FALSE
+493.1897FALSE
+491.4953FALSE
+493.1888FALSE
+491.4987FALSE
+493.1898FALSE
+491.5166FALSE
+491.4856FALSE
+493.1887FALSE
+491.4995FALSE
+493.1863FALSE
+491.4722FALSE
+493.1865FALSE
+491.4758FALSE
+493.1861FALSE
+491.4958FALSE
+493.1871FALSE
+491.4864FALSE
+493.1855FALSE
+491.499FALSE
+493.1859FALSE
+491.4748FALSE
+493.1861FALSE
+491.4755FALSE
+493.1866FALSE
+491.4983FALSE
+491.4856FALSE
+493.1867FALSE
+493.1863FALSE
+491.4995FALSE
+493.1855FALSE
+491.4722FALSE
+493.1855FALSE
+491.4758FALSE
+493.1862FALSE
+491.4958FALSE
+493.1856FALSE
+491.4711FALSE
+491.4825FALSE
+493.1864FALSE
+491.46FALSE
+491.4601FALSE
+493.1853FALSE
+491.4824FALSE
+491.88FALSE
+493.1858FALSE
+491.8475FALSE
+493.1858FALSE
+491.9123FALSE
+493.1859FALSE
+491.9077FALSE
+493.186FALSE
+491.8519FALSE
+493.1854FALSE
+491.4515FALSE
+493.1858FALSE
+491.4622FALSE
+493.1857FALSE
+491.4413FALSE
+493.186FALSE
+491.4413FALSE
+493.1859FALSE
+491.462FALSE
+493.1853FALSE
+491.7094FALSE
+493.1858FALSE
+491.6755FALSE
+491.7431FALSE
+493.1858FALSE
+491.7388FALSE
+493.1859FALSE
+491.6797FALSE
+493.186FALSE
+491.4415FALSE
+493.1853FALSE
+491.4518FALSE
+493.1858FALSE
+491.4317FALSE
+493.1858FALSE
+491.4318FALSE
+493.1859FALSE
+491.4517FALSE
+493.186FALSE
+492.1047FALSE
+493.1853FALSE
+492.0743FALSE
+493.1858FALSE
+492.135FALSE
+493.1858FALSE
+492.1301FALSE
+493.1859FALSE
+492.0791FALSE
+493.186FALSE
+491.4416FALSE
+493.1853FALSE
+491.4359FALSE
+493.1858FALSE
+491.4771FALSE
+493.1858FALSE
+491.4732FALSE
+493.1859FALSE
+491.4358FALSE
+493.186FALSE
+491.4333FALSE
+493.1853FALSE
+491.4431FALSE
+493.1858FALSE
+491.4528FALSE
+493.1858FALSE
+491.4489FALSE
+493.1859FALSE
+491.4431FALSE
+493.186FALSE
+491.4316FALSE
+493.1853FALSE
+491.4414FALSE
+493.1858FALSE
+491.4479FALSE
+491.444FALSE
+493.1858FALSE
+491.4413FALSE
+493.1859FALSE
+491.4555FALSE
+493.186FALSE
+493.1853FALSE
+491.4673FALSE
+493.1858FALSE
+491.457FALSE
+493.1858FALSE
+491.4567FALSE
+491.4638FALSE
+493.1859FALSE
+491.431FALSE
+491.4416FALSE
+493.186FALSE
+491.4456FALSE
+491.4429FALSE
+493.1853FALSE
+491.4405FALSE
+491.4353FALSE
+493.1858FALSE
+491.4472FALSE
+491.4458FALSE
+493.1858FALSE
+491.4448FALSE
+491.4436FALSE
+493.1859FALSE
+491.4313FALSE
+491.442FALSE
+493.186FALSE
+491.4451FALSE
+493.1853FALSE
+491.4429FALSE
+491.4403FALSE
+493.1858FALSE
+491.431FALSE
+491.4416FALSE
+493.1858FALSE
+491.4456FALSE
+491.4429FALSE
+493.1859FALSE
+491.4405FALSE
+491.431FALSE
+493.186FALSE
+491.4416FALSE
+491.4456FALSE
+493.1853FALSE
+491.4429FALSE
+491.4405FALSE
+493.1858FALSE
+491.431FALSE
+491.4416FALSE
+493.1858FALSE
+491.4456FALSE
+493.1859FALSE
+491.4429FALSE
+491.4405FALSE
+493.186FALSE
+491.431FALSE
+491.4416FALSE
+493.1853FALSE
+491.4456FALSE
+491.4429FALSE
+493.1858FALSE
+491.4405FALSE
+491.431FALSE
+493.1858FALSE
+491.4416FALSE
+491.4456FALSE
+493.1859FALSE
+491.4429FALSE
+493.186FALSE
+491.4405FALSE
+491.431FALSE
+493.1853FALSE
+491.4416FALSE
+493.1858FALSE
+491.4456FALSE
+493.1858FALSE
+491.4429FALSE
+493.1859FALSE
+491.4405FALSE
+493.186FALSE
+491.431FALSE
+493.1853FALSE
+491.4416FALSE
+493.1858FALSE
+491.4456FALSE
+493.1858FALSE
+491.4429FALSE
+493.1859FALSE
+491.4405FALSE
+493.186FALSE
+491.431FALSE
+493.1853FALSE
+491.4416FALSE
+493.1858FALSE
+491.4456FALSE
+493.1858FALSE
+491.4429FALSE
+493.1859FALSE
+491.4405FALSE
+493.186FALSE
+$par
+smooth_log_cases_lag0.bw         time_ind_lag0.bw 
+               -2.616338                -2.223991 
+
+$value
+[1] 493.1853
+
+$counts
+function gradient 
+      31       31 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+491.431FALSE
+491.4416FALSE
+491.4456FALSE
+491.4429FALSE
+491.4405FALSE
+491.431FALSE
+491.4416FALSE
+491.4456FALSE
+491.4429FALSE
+491.4405FALSE
+491.431FALSE
+491.4416FALSE
+491.4456FALSE
+491.4429FALSE
+491.4405FALSE
+491.431FALSE
+491.4416FALSE
+491.4456FALSE
+491.4429FALSE
+491.4405FALSE
+491.431FALSE
+491.4416FALSE
+491.4456FALSE
+491.4429FALSE
+491.4405FALSE
+$par
+smooth_log_cases_lag1.bw         time_ind_lag0.bw 
+               -2.645279                -2.651950 
+
+$value
+[1] 491.431
+
+$counts
+function gradient 
+      42       42 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+> 
+> save(ssr_fit,
++     file=paste0("/home/ngr67a/2015-cdc-flu-competition/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
+> 
+> proc.time()
+   user  system elapsed 
+789.925   0.477 677.190 

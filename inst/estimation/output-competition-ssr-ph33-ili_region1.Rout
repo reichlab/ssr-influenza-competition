@@ -1,0 +1,762 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### get ssr fit -- prediction horizons 1:52
+> library(lubridate)
+> library(ggplot2)
+> library(plyr)
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:lubridate’:
+
+    intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(reshape)
+
+Attaching package: ‘reshape’
+
+The following object is masked from ‘package:dplyr’:
+
+    rename
+
+The following objects are masked from ‘package:plyr’:
+
+    rename, round_any
+
+The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+> library(ssrFlu)
+> library(doMC)
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+> 
+> registerDoMC(cores=3)
+> 
+> args <- commandArgs(trailingOnly=TRUE)
+> 
+> data_set <- args[1]
+> prediction_horizon_limit <- as.integer(args[2])
+> 
+> ## load dataset
+> if(identical(data_set, "ili_national")) {
++     data <- ili_national
++ } 
+> if(identical(data_set, "ili_region1")) {
++     data <- ili_region1
++ } 
+> if(identical(data_set, "ili_region2")) {
++     data <- ili_region2
++ } 
+> if(identical(data_set, "ili_region3")) {
++     data <- ili_region3
++ } 
+> if(identical(data_set, "ili_region4")) {
++     data <- ili_region4
++ } 
+> if(identical(data_set, "ili_region5")) {
++     data <- ili_region5
++ } 
+> if(identical(data_set, "ili_region6")) {
++     data <- ili_region6
++ } 
+> if(identical(data_set, "ili_region7")) {
++     data <- ili_region7
++ } 
+> if(identical(data_set, "ili_region8")) {
++     data <- ili_region8
++ } 
+> if(identical(data_set, "ili_region9")) {
++     data <- ili_region9
++ } 
+> if(identical(data_set, "ili_region10")) {
++     data <- ili_region10
++ } 
+> 
+> 
+> 
+> ## add log column
+> data$log_total_cases <- log(data$total_cases + 1)
+> 
+> ## add week_start_date
+> char_dates <- paste(data$year, data$week, "1")
+> data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+> 
+> ## remove week 53s
+> data <- data[-which(is.na(data$week_start_date)),]
+> data <- data[262:nrow(data),]
+> 
+> ## add smooth log column -- or not, since it is already pretty smooth...
+> sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+> data$smooth_log_cases <- sm$fitted
+> 
+> ## add time column
+> data$time_ind <- seq_len(nrow(data))
+> 
+> ssr_control <- create_ssr_control(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     max_lag=list(smooth_log_cases=1,
++         time_ind=0),
++     prediction_horizons=as.integer(prediction_horizon_limit),
++     kernel_fns=list(smooth_log_cases="squared_exp_kernel",
++         time_ind="periodic_kernel"),
++     theta_est=list(smooth_log_cases="bw",
++         time_ind="bw"),
++     theta_fixed=list(time_ind=list(period=pi / 52)),
++     theta_transform_fns=list(
++         squared_exp_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         ),
++         periodic_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         )
++     ),
++     crossval_buffer=52,
++     loss_fn_name="mae_from_kernel_weights_and_centers",
++     loss_fn_args=list())
+> 
+> 
+> ssr_fit <- ssr(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     data=data,
++     ssr_control=ssr_control)
+351.4177FALSE
+359.4133FALSE
+286.0392FALSE
+351.428FALSE
+359.4238FALSE
+286.0327FALSE
+351.4074FALSE
+359.4029FALSE
+286.0457FALSE
+346.1538FALSE
+355.5203FALSE
+281.8332FALSE
+346.1555FALSE
+355.5234FALSE
+281.8411FALSE
+346.152FALSE
+355.5171FALSE
+281.8256FALSE
+345.7153FALSE
+354.6801FALSE
+283.2154FALSE
+345.7168FALSE
+354.6782FALSE
+345.7137FALSE
+283.2094FALSE
+354.682FALSE
+353.7768FALSE
+283.2214FALSE
+354.7164FALSE
+353.7581FALSE
+281.4041FALSE
+354.7184FALSE
+353.7954FALSE
+281.4024FALSE
+354.7144FALSE
+345.6588FALSE
+281.406FALSE
+354.6024FALSE
+345.6592FALSE
+285.37FALSE
+354.6025FALSE
+345.6584FALSE
+285.4042FALSE
+345.6732FALSE
+354.6023FALSE
+285.3358FALSE
+354.6023FALSE
+345.6726FALSE
+281.383FALSE
+354.6023FALSE
+345.6738FALSE
+281.3833FALSE
+354.6022FALSE
+345.6513FALSE
+281.3828FALSE
+354.6067FALSE
+345.6515FALSE
+354.6063FALSE
+345.6511FALSE
+281.3822FALSE
+345.6526FALSE
+281.3824FALSE
+354.6072FALSE
+345.6521FALSE
+281.382FALSE
+354.6022FALSE
+345.6531FALSE
+281.3943FALSE
+354.6023FALSE
+345.6497FALSE
+281.3928FALSE
+354.6022FALSE
+345.6499FALSE
+281.3958FALSE
+354.6049FALSE
+345.6496FALSE
+281.3819FALSE
+354.6044FALSE
+345.6828FALSE
+281.3819FALSE
+354.6053FALSE
+345.6821FALSE
+281.3819FALSE
+354.6022FALSE
+345.6835FALSE
+281.3819FALSE
+354.6023FALSE
+345.6495FALSE
+281.3819FALSE
+354.6022FALSE
+345.6496FALSE
+281.3819FALSE
+354.6037FALSE
+345.6495FALSE
+281.3819FALSE
+354.6033FALSE
+345.6495FALSE
+281.3819FALSE
+354.6042FALSE
+345.6496FALSE
+281.3819FALSE
+$par
+time_ind_lag0.bw 
+       -1.427173 
+
+$value
+[1] 281.3819
+
+$counts
+function gradient 
+      11       11 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+354.6022FALSE
+345.6497FALSE
+354.6023FALSE
+354.6021FALSE
+345.6495FALSE
+354.603FALSE
+345.6496FALSE
+354.6026FALSE
+345.6496FALSE
+$par
+smooth_log_cases_lag0.bw 
+               -3.596739 
+
+$value
+[1] 345.6495
+
+$counts
+function gradient 
+      13       13 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+354.6035FALSE
+354.6022FALSE
+354.6022FALSE
+354.6021FALSE
+354.6059FALSE
+354.6055FALSE
+354.6064FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6022FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+354.6022FALSE
+354.6022FALSE
+354.6023FALSE
+$par
+smooth_log_cases_lag1.bw 
+               -3.675418 
+
+$value
+[1] 354.6022
+
+$counts
+function gradient 
+      34       34 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+292.0924FALSE
+293.9314FALSE
+292.0862FALSE
+293.9257FALSE
+292.0987FALSE
+293.9371FALSE
+292.0873FALSE
+293.9257FALSE
+292.0976FALSE
+293.9371FALSE
+301.9066FALSE
+306.757FALSE
+301.909FALSE
+306.7585FALSE
+301.9042FALSE
+306.7555FALSE
+301.9599FALSE
+306.8197FALSE
+301.8533FALSE
+290.7131FALSE
+306.6943FALSE
+290.7099FALSE
+292.6535FALSE
+290.7163FALSE
+292.6504FALSE
+290.7179FALSE
+292.6565FALSE
+290.7083FALSE
+292.6562FALSE
+290.2353FALSE
+292.6508FALSE
+290.2323FALSE
+290.2383FALSE
+292.1925FALSE
+290.2371FALSE
+292.1885FALSE
+290.2335FALSE
+292.1964FALSE
+287.4656FALSE
+292.1938FALSE
+287.4584FALSE
+292.1911FALSE
+287.4728FALSE
+289.3071FALSE
+287.4618FALSE
+289.2978FALSE
+287.4696FALSE
+289.3164FALSE
+283.2447FALSE
+289.3042FALSE
+283.2445FALSE
+289.31FALSE
+283.2449FALSE
+283.8227FALSE
+283.2388FALSE
+283.8218FALSE
+283.2506FALSE
+283.8236FALSE
+282.6077FALSE
+283.816FALSE
+282.6072FALSE
+283.8294FALSE
+282.6082FALSE
+282.947FALSE
+282.6021FALSE
+282.6133FALSE
+282.946FALSE
+286.403FALSE
+282.948FALSE
+286.4002FALSE
+282.9412FALSE
+286.4058FALSE
+282.9529FALSE
+286.4298FALSE
+286.3763FALSE
+302.2253FALSE
+282.0682FALSE
+302.2267FALSE
+282.0672FALSE
+302.2238FALSE
+282.0691FALSE
+302.3038FALSE
+282.0645FALSE
+302.1474FALSE
+282.0718FALSE
+282.1527FALSE
+281.8226FALSE
+282.1518FALSE
+281.822FALSE
+281.8233FALSE
+282.1535FALSE
+281.8248FALSE
+282.1481FALSE
+281.8206FALSE
+282.1572FALSE
+281.597FALSE
+281.5966FALSE
+289.9507FALSE
+281.5974FALSE
+289.951FALSE
+281.5952FALSE
+289.9505FALSE
+281.5988FALSE
+290.0009FALSE
+281.4802FALSE
+289.9006FALSE
+281.48FALSE
+281.8173FALSE
+281.4803FALSE
+281.48FALSE
+281.8166FALSE
+281.4803FALSE
+281.818FALSE
+281.429FALSE
+281.8151FALSE
+281.4289FALSE
+281.8195FALSE
+281.429FALSE
+281.6577FALSE
+281.4289FALSE
+281.6574FALSE
+281.4292FALSE
+281.6581FALSE
+281.4054FALSE
+281.6604FALSE
+281.4054FALSE
+281.6551FALSE
+281.4055FALSE
+281.4767FALSE
+281.4054FALSE
+281.4765FALSE
+281.4055FALSE
+281.4769FALSE
+281.3935FALSE
+281.4766FALSE
+281.3935FALSE
+281.4768FALSE
+281.3935FALSE
+281.4351FALSE
+281.3934FALSE
+281.435FALSE
+281.4352FALSE
+281.3941FALSE
+281.435FALSE
+281.3874FALSE
+281.4359FALSE
+281.3874FALSE
+281.4075FALSE
+281.3874FALSE
+281.4074FALSE
+281.3876FALSE
+281.4075FALSE
+281.3872FALSE
+281.4074FALSE
+281.385FALSE
+281.4075FALSE
+281.385FALSE
+281.385FALSE
+281.3943FALSE
+281.3852FALSE
+281.3943FALSE
+281.3848FALSE
+281.3943FALSE
+281.3863FALSE
+281.3943FALSE
+281.3863FALSE
+281.3943FALSE
+281.3863FALSE
+281.3881FALSE
+281.3856FALSE
+281.3881FALSE
+281.3871FALSE
+281.3882FALSE
+281.3842FALSE
+281.3881FALSE
+281.3842FALSE
+281.3883FALSE
+281.3842FALSE
+281.4337FALSE
+281.3842FALSE
+281.4337FALSE
+281.4337FALSE
+281.3842FALSE
+281.4364FALSE
+281.3832FALSE
+281.4309FALSE
+281.3832FALSE
+281.3876FALSE
+281.3832FALSE
+281.3876FALSE
+281.3832FALSE
+281.3876FALSE
+281.3834FALSE
+281.3878FALSE
+281.3825FALSE
+281.3876FALSE
+281.3825FALSE
+281.3849FALSE
+281.3825FALSE
+281.3849FALSE
+281.3825FALSE
+281.3849FALSE
+281.3825FALSE
+281.3849FALSE
+281.3849FALSE
+281.3822FALSE
+281.3833FALSE
+281.3822FALSE
+281.3833FALSE
+281.3822FALSE
+281.3833FALSE
+281.3822FALSE
+281.3834FALSE
+281.3822FALSE
+281.3833FALSE
+281.3986FALSE
+281.3826FALSE
+281.3986FALSE
+281.3826FALSE
+281.3986FALSE
+281.3826FALSE
+281.4001FALSE
+281.3826FALSE
+281.3971FALSE
+281.3826FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3822FALSE
+281.3823FALSE
+281.3822FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+283.8177FALSE
+281.382FALSE
+283.8177FALSE
+283.8177FALSE
+281.382FALSE
+283.8431FALSE
+281.382FALSE
+283.7928FALSE
+281.382FALSE
+281.3821FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+281.382FALSE
+281.3821FALSE
+281.3821FALSE
+281.3819FALSE
+281.382FALSE
+281.3819FALSE
+281.382FALSE
+281.3819FALSE
+281.382FALSE
+281.3819FALSE
+281.382FALSE
+281.3819FALSE
+281.382FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3848FALSE
+281.3819FALSE
+281.3848FALSE
+281.3848FALSE
+281.3819FALSE
+281.3841FALSE
+281.3819FALSE
+281.3856FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.4366FALSE
+281.3819FALSE
+281.4366FALSE
+281.3819FALSE
+281.4366FALSE
+281.3819FALSE
+$par
+smooth_log_cases_lag0.bw         time_ind_lag0.bw 
+                5.525621                -1.427861 
+
+$value
+[1] 281.3819
+
+$counts
+function gradient 
+      32       32 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+281.4344FALSE
+281.4388FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+281.3819FALSE
+$par
+smooth_log_cases_lag1.bw         time_ind_lag0.bw 
+                5.696572                -1.427699 
+
+$value
+[1] 281.3819
+
+$counts
+function gradient 
+      34       34 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+> 
+> save(ssr_fit,
++     file=paste0("/home/ngr67a/2015-cdc-flu-competition/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
+> 
+> proc.time()
+   user  system elapsed 
+753.476   0.886 632.910 

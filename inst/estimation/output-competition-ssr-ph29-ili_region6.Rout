@@ -1,0 +1,657 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### get ssr fit -- prediction horizons 1:52
+> library(lubridate)
+> library(ggplot2)
+> library(plyr)
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:lubridate’:
+
+    intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(reshape)
+
+Attaching package: ‘reshape’
+
+The following object is masked from ‘package:dplyr’:
+
+    rename
+
+The following objects are masked from ‘package:plyr’:
+
+    rename, round_any
+
+The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+> library(ssrFlu)
+> library(doMC)
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+> 
+> registerDoMC(cores=3)
+> 
+> args <- commandArgs(trailingOnly=TRUE)
+> 
+> data_set <- args[1]
+> prediction_horizon_limit <- as.integer(args[2])
+> 
+> ## load dataset
+> if(identical(data_set, "ili_national")) {
++     data <- ili_national
++ } 
+> if(identical(data_set, "ili_region1")) {
++     data <- ili_region1
++ } 
+> if(identical(data_set, "ili_region2")) {
++     data <- ili_region2
++ } 
+> if(identical(data_set, "ili_region3")) {
++     data <- ili_region3
++ } 
+> if(identical(data_set, "ili_region4")) {
++     data <- ili_region4
++ } 
+> if(identical(data_set, "ili_region5")) {
++     data <- ili_region5
++ } 
+> if(identical(data_set, "ili_region6")) {
++     data <- ili_region6
++ } 
+> if(identical(data_set, "ili_region7")) {
++     data <- ili_region7
++ } 
+> if(identical(data_set, "ili_region8")) {
++     data <- ili_region8
++ } 
+> if(identical(data_set, "ili_region9")) {
++     data <- ili_region9
++ } 
+> if(identical(data_set, "ili_region10")) {
++     data <- ili_region10
++ } 
+> 
+> 
+> 
+> ## add log column
+> data$log_total_cases <- log(data$total_cases + 1)
+> 
+> ## add week_start_date
+> char_dates <- paste(data$year, data$week, "1")
+> data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+> 
+> ## remove week 53s
+> data <- data[-which(is.na(data$week_start_date)),]
+> data <- data[262:nrow(data),]
+> 
+> ## add smooth log column -- or not, since it is already pretty smooth...
+> sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+> data$smooth_log_cases <- sm$fitted
+> 
+> ## add time column
+> data$time_ind <- seq_len(nrow(data))
+> 
+> ssr_control <- create_ssr_control(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     max_lag=list(smooth_log_cases=1,
++         time_ind=0),
++     prediction_horizons=as.integer(prediction_horizon_limit),
++     kernel_fns=list(smooth_log_cases="squared_exp_kernel",
++         time_ind="periodic_kernel"),
++     theta_est=list(smooth_log_cases="bw",
++         time_ind="bw"),
++     theta_fixed=list(time_ind=list(period=pi / 52)),
++     theta_transform_fns=list(
++         squared_exp_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         ),
++         periodic_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         )
++     ),
++     crossval_buffer=52,
++     loss_fn_name="mae_from_kernel_weights_and_centers",
++     loss_fn_args=list())
+> 
+> 
+> ssr_fit <- ssr(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     data=data,
++     ssr_control=ssr_control)
+914.7525FALSE
+912.641FALSE
+694.0136FALSE
+914.7628FALSE
+912.6008FALSE
+914.742FALSE
+912.6812FALSE
+694.004FALSE
+902.0027FALSE
+911.637FALSE
+694.0232FALSE
+902.0309FALSE
+693.8101FALSE
+901.9747FALSE
+911.6334FALSE
+896.8145FALSE
+693.8521FALSE
+911.6552FALSE
+693.7683FALSE
+896.811FALSE
+904.1275FALSE
+896.8182FALSE
+692.1385FALSE
+904.1196FALSE
+692.1284FALSE
+896.7455FALSE
+904.1352FALSE
+692.1487FALSE
+906.347FALSE
+896.7456FALSE
+688.8988FALSE
+906.3824FALSE
+896.7454FALSE
+688.896FALSE
+906.3116FALSE
+896.7455FALSE
+903.4992FALSE
+688.9017FALSE
+896.7455FALSE
+896.7455FALSE
+903.4817FALSE
+691.5298FALSE
+896.7454FALSE
+903.5166FALSE
+691.5619FALSE
+896.7455FALSE
+902.9269FALSE
+691.4979FALSE
+896.7455FALSE
+902.9046FALSE
+688.8193FALSE
+902.949FALSE
+896.7454FALSE
+688.8193FALSE
+902.8584FALSE
+896.7455FALSE
+688.8193FALSE
+902.8625FALSE
+896.7455FALSE
+688.8193FALSE
+902.8542FALSE
+896.7454FALSE
+688.8193FALSE
+903.2544FALSE
+896.7455FALSE
+688.8193FALSE
+903.2347FALSE
+896.7455FALSE
+$par
+smooth_log_cases_lag0.bw 
+               -1.667826 
+
+$value
+[1] 896.7454
+
+$counts
+function gradient 
+       8        8 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+688.8193FALSE
+903.274FALSE
+688.8193FALSE
+902.8449FALSE
+688.8193FALSE
+902.8494FALSE
+688.8193FALSE
+902.8402FALSE
+902.8327FALSE
+902.8377FALSE
+688.8193FALSE
+902.8276FALSE
+688.8193FALSE
+902.9591FALSE
+688.8193FALSE
+688.8193FALSE
+$par
+time_ind_lag0.bw 
+         -1.5851 
+
+$value
+[1] 688.8193
+
+$counts
+function gradient 
+      10       10 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+902.9371FALSE
+902.981FALSE
+902.8203FALSE
+902.8256FALSE
+902.8151FALSE
+902.817FALSE
+902.8185FALSE
+902.8225FALSE
+902.8294FALSE
+902.8344FALSE
+902.8242FALSE
+902.8152FALSE
+902.8201FALSE
+902.8209FALSE
+902.815FALSE
+902.8205FALSE
+902.8205FALSE
+902.815FALSE
+902.8205FALSE
+902.8205FALSE
+$par
+smooth_log_cases_lag1.bw 
+                -2.70343 
+
+$value
+[1] 902.815
+
+$counts
+function gradient 
+      17       17 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+747.2284FALSE
+746.0445FALSE
+747.17FALSE
+745.9795FALSE
+747.2867FALSE
+746.1095FALSE
+747.2721FALSE
+746.103FALSE
+745.986FALSE
+747.1846FALSE
+702.8451FALSE
+703.6331FALSE
+702.8313FALSE
+703.6123FALSE
+702.8589FALSE
+703.654FALSE
+702.8374FALSE
+703.6304FALSE
+702.8528FALSE
+703.6358FALSE
+700.5465FALSE
+698.3331FALSE
+700.5369FALSE
+698.3241FALSE
+700.5561FALSE
+698.3423FALSE
+700.542FALSE
+698.3273FALSE
+700.551FALSE
+698.339FALSE
+696.1998FALSE
+696.1923FALSE
+694.8291FALSE
+696.2073FALSE
+694.8283FALSE
+696.1917FALSE
+694.8298FALSE
+696.2079FALSE
+694.8217FALSE
+689.5821FALSE
+694.8364FALSE
+689.5808FALSE
+693.0478FALSE
+689.5835FALSE
+693.0433FALSE
+689.5858FALSE
+693.0523FALSE
+689.5784FALSE
+693.0495FALSE
+689.3749FALSE
+693.0462FALSE
+689.3738FALSE
+694.0438FALSE
+689.3759FALSE
+694.0387FALSE
+689.3751FALSE
+694.0488FALSE
+689.3746FALSE
+694.0735FALSE
+689.0451FALSE
+694.0145FALSE
+689.0446FALSE
+692.8155FALSE
+689.0455FALSE
+692.8104FALSE
+689.0452FALSE
+692.8206FALSE
+689.045FALSE
+692.8231FALSE
+692.808FALSE
+688.9356FALSE
+691.8135FALSE
+688.9354FALSE
+691.8088FALSE
+688.9359FALSE
+691.8182FALSE
+688.9357FALSE
+691.8215FALSE
+688.9356FALSE
+691.8055FALSE
+688.8756FALSE
+691.4715FALSE
+688.8755FALSE
+691.4714FALSE
+691.4717FALSE
+688.8758FALSE
+691.5016FALSE
+688.8757FALSE
+691.4415FALSE
+688.8597FALSE
+688.8756FALSE
+688.8596FALSE
+688.8475FALSE
+688.8597FALSE
+688.8475FALSE
+688.8597FALSE
+688.8476FALSE
+688.8597FALSE
+688.8475FALSE
+688.8567FALSE
+688.8475FALSE
+688.8567FALSE
+688.8333FALSE
+688.8568FALSE
+688.8333FALSE
+688.8567FALSE
+688.8333FALSE
+688.8567FALSE
+688.8333FALSE
+688.847FALSE
+688.8469FALSE
+688.8333FALSE
+688.847FALSE
+688.8263FALSE
+688.847FALSE
+688.8263FALSE
+688.847FALSE
+688.8263FALSE
+688.8316FALSE
+688.8263FALSE
+688.8316FALSE
+688.8263FALSE
+688.8317FALSE
+690.7502FALSE
+688.8316FALSE
+690.7502FALSE
+688.8317FALSE
+688.8275FALSE
+690.7502FALSE
+688.8274FALSE
+690.7431FALSE
+688.8275FALSE
+690.7573FALSE
+688.8262FALSE
+688.8263FALSE
+688.8287FALSE
+688.8263FALSE
+688.8217FALSE
+688.8263FALSE
+688.8217FALSE
+688.8263FALSE
+688.8217FALSE
+688.8263FALSE
+688.8217FALSE
+688.826FALSE
+688.8218FALSE
+688.826FALSE
+688.8209FALSE
+688.826FALSE
+688.8209FALSE
+688.826FALSE
+688.8209FALSE
+688.826FALSE
+688.8209FALSE
+688.8227FALSE
+688.8209FALSE
+688.8227FALSE
+688.82FALSE
+688.8227FALSE
+688.82FALSE
+688.8227FALSE
+688.82FALSE
+688.8227FALSE
+688.82FALSE
+688.8209FALSE
+688.8201FALSE
+688.8209FALSE
+688.8197FALSE
+688.8209FALSE
+688.8197FALSE
+688.8209FALSE
+688.8197FALSE
+688.8209FALSE
+688.8197FALSE
+688.8201FALSE
+688.8197FALSE
+688.8201FALSE
+688.8195FALSE
+688.8201FALSE
+688.8195FALSE
+688.8201FALSE
+688.8195FALSE
+688.8201FALSE
+688.8194FALSE
+688.8197FALSE
+688.8195FALSE
+688.8197FALSE
+688.8198FALSE
+688.8197FALSE
+688.8198FALSE
+688.8197FALSE
+688.8197FALSE
+688.8198FALSE
+688.8195FALSE
+688.8198FALSE
+688.8195FALSE
+688.8197FALSE
+688.8195FALSE
+688.8194FALSE
+688.8195FALSE
+688.8194FALSE
+688.8195FALSE
+688.8194FALSE
+688.8194FALSE
+688.8198FALSE
+688.8194FALSE
+688.8198FALSE
+688.8193FALSE
+688.8198FALSE
+688.8193FALSE
+688.8199FALSE
+688.8198FALSE
+688.8193FALSE
+688.8195FALSE
+688.8193FALSE
+688.8195FALSE
+688.8193FALSE
+688.8195FALSE
+688.8193FALSE
+688.8195FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8194FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8311FALSE
+688.8193FALSE
+688.8311FALSE
+688.8193FALSE
+688.8311FALSE
+688.8193FALSE
+688.8292FALSE
+688.8193FALSE
+688.833FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+689.4725FALSE
+688.8193FALSE
+689.4725FALSE
+688.8193FALSE
+689.4725FALSE
+688.8193FALSE
+689.4663FALSE
+688.8193FALSE
+689.4788FALSE
+688.8193FALSE
+$par
+smooth_log_cases_lag1.bw         time_ind_lag0.bw 
+                6.758832                -1.585215 
+
+$value
+[1] 688.8193
+
+$counts
+function gradient 
+      29       29 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+688.8193FALSE
+$par
+smooth_log_cases_lag0.bw         time_ind_lag0.bw 
+                6.655425                -1.585109 
+
+$value
+[1] 688.8193
+
+$counts
+function gradient 
+      30       30 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+> 
+> save(ssr_fit,
++     file=paste0("/home/ngr67a/2015-cdc-flu-competition/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
+> 
+> proc.time()
+   user  system elapsed 
+573.462   0.700 489.068 

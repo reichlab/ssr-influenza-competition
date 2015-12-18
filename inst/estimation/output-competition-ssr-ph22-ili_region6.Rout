@@ -1,0 +1,818 @@
+
+R version 3.2.2 (2015-08-14) -- "Fire Safety"
+Copyright (C) 2015 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ### get ssr fit -- prediction horizons 1:52
+> library(lubridate)
+> library(ggplot2)
+> library(plyr)
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+> library(dplyr)
+
+Attaching package: ‘dplyr’
+
+The following objects are masked from ‘package:plyr’:
+
+    arrange, count, desc, failwith, id, mutate, rename, summarise,
+    summarize
+
+The following objects are masked from ‘package:lubridate’:
+
+    intersect, setdiff, union
+
+The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+> library(reshape)
+
+Attaching package: ‘reshape’
+
+The following object is masked from ‘package:dplyr’:
+
+    rename
+
+The following objects are masked from ‘package:plyr’:
+
+    rename, round_any
+
+The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+> library(ssrFlu)
+> library(doMC)
+Loading required package: foreach
+Loading required package: iterators
+Loading required package: parallel
+> 
+> registerDoMC(cores=3)
+> 
+> args <- commandArgs(trailingOnly=TRUE)
+> 
+> data_set <- args[1]
+> prediction_horizon_limit <- as.integer(args[2])
+> 
+> ## load dataset
+> if(identical(data_set, "ili_national")) {
++     data <- ili_national
++ } 
+> if(identical(data_set, "ili_region1")) {
++     data <- ili_region1
++ } 
+> if(identical(data_set, "ili_region2")) {
++     data <- ili_region2
++ } 
+> if(identical(data_set, "ili_region3")) {
++     data <- ili_region3
++ } 
+> if(identical(data_set, "ili_region4")) {
++     data <- ili_region4
++ } 
+> if(identical(data_set, "ili_region5")) {
++     data <- ili_region5
++ } 
+> if(identical(data_set, "ili_region6")) {
++     data <- ili_region6
++ } 
+> if(identical(data_set, "ili_region7")) {
++     data <- ili_region7
++ } 
+> if(identical(data_set, "ili_region8")) {
++     data <- ili_region8
++ } 
+> if(identical(data_set, "ili_region9")) {
++     data <- ili_region9
++ } 
+> if(identical(data_set, "ili_region10")) {
++     data <- ili_region10
++ } 
+> 
+> 
+> 
+> ## add log column
+> data$log_total_cases <- log(data$total_cases + 1)
+> 
+> ## add week_start_date
+> char_dates <- paste(data$year, data$week, "1")
+> data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+> 
+> ## remove week 53s
+> data <- data[-which(is.na(data$week_start_date)),]
+> data <- data[262:nrow(data),]
+> 
+> ## add smooth log column -- or not, since it is already pretty smooth...
+> sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+> data$smooth_log_cases <- sm$fitted
+> 
+> ## add time column
+> data$time_ind <- seq_len(nrow(data))
+> 
+> ssr_control <- create_ssr_control(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     max_lag=list(smooth_log_cases=1,
++         time_ind=0),
++     prediction_horizons=as.integer(prediction_horizon_limit),
++     kernel_fns=list(smooth_log_cases="squared_exp_kernel",
++         time_ind="periodic_kernel"),
++     theta_est=list(smooth_log_cases="bw",
++         time_ind="bw"),
++     theta_fixed=list(time_ind=list(period=pi / 52)),
++     theta_transform_fns=list(
++         squared_exp_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         ),
++         periodic_kernel=list(
++             bw=list(transform="log",
++                 detransform="exp")
++         )
++     ),
++     crossval_buffer=52,
++     loss_fn_name="mae_from_kernel_weights_and_centers",
++     loss_fn_args=list())
+> 
+> 
+> ssr_fit <- ssr(X_names=c("smooth_log_cases", "time_ind"),
++     y_names="total_cases",
++     time_name=NULL,
++     data=data,
++     ssr_control=ssr_control)
+868.8501FALSE
+875.5566FALSE
+704.2381FALSE
+868.8613FALSE
+704.227FALSE
+875.5589FALSE
+868.8389FALSE
+704.2492FALSE
+875.5543FALSE
+870.3459FALSE
+704.1524FALSE
+891.0295FALSE
+870.3221FALSE
+704.1978FALSE
+890.9997FALSE
+870.3696FALSE
+704.1072FALSE
+891.0594FALSE
+864.3116FALSE
+701.8631FALSE
+875.4542FALSE
+864.3148FALSE
+701.8522FALSE
+875.4556FALSE
+864.3084FALSE
+875.4527FALSE
+701.874FALSE
+864.4239FALSE
+698.4903FALSE
+875.4726FALSE
+698.489FALSE
+864.4168FALSE
+875.4707FALSE
+698.4915FALSE
+875.4744FALSE
+864.431FALSE
+875.4337FALSE
+864.1558FALSE
+698.4862FALSE
+875.4335FALSE
+698.4872FALSE
+864.156FALSE
+875.4338FALSE
+698.4851FALSE
+864.1557FALSE
+875.4332FALSE
+698.4473FALSE
+864.1555FALSE
+875.4331FALSE
+698.4483FALSE
+864.1555FALSE
+875.4333FALSE
+698.4469FALSE
+864.1555FALSE
+875.4328FALSE
+698.5314FALSE
+864.1555FALSE
+875.4328FALSE
+698.529FALSE
+864.1555FALSE
+875.4329FALSE
+698.5337FALSE
+864.1555FALSE
+$par
+smooth_log_cases_lag1.bw 
+               -2.878511 
+
+$value
+[1] 864.1555
+
+$counts
+function gradient 
+       7        7 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+875.4328FALSE
+698.4521FALSE
+875.4329FALSE
+698.4511FALSE
+875.4329FALSE
+$par
+smooth_log_cases_lag0.bw 
+               -2.389103 
+
+$value
+[1] 875.4328
+
+$counts
+function gradient 
+       8        8 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+698.453FALSE
+698.4468FALSE
+698.447FALSE
+698.4465FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4466FALSE
+698.4469FALSE
+698.4468FALSE
+698.4466FALSE
+698.4468FALSE
+698.4471FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+700.4835FALSE
+700.5068FALSE
+700.4602FALSE
+698.4471FALSE
+698.4481FALSE
+698.4468FALSE
+698.4466FALSE
+698.4469FALSE
+698.4468FALSE
+698.4466FALSE
+698.4468FALSE
+698.4471FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+698.4465FALSE
+698.4468FALSE
+698.4472FALSE
+$par
+time_ind_lag0.bw 
+       -1.606154 
+
+$value
+[1] 698.4465
+
+$counts
+function gradient 
+      50       50 
+
+$convergence
+[1] 52
+
+$message
+[1] "ERROR: ABNORMAL_TERMINATION_IN_LNSRCH"
+
+751.4245FALSE
+747.2808FALSE
+751.3749FALSE
+747.2358FALSE
+751.4741FALSE
+747.3259FALSE
+751.4706FALSE
+747.3219FALSE
+751.3784FALSE
+747.2399FALSE
+718.5587FALSE
+717.9691FALSE
+718.5383FALSE
+717.948FALSE
+718.5791FALSE
+717.9902FALSE
+718.546FALSE
+717.9587FALSE
+718.5715FALSE
+717.9795FALSE
+708.3755FALSE
+705.3004FALSE
+708.3515FALSE
+705.2825FALSE
+708.3995FALSE
+705.3183FALSE
+708.3731FALSE
+705.2943FALSE
+708.3779FALSE
+705.3066FALSE
+699.8623FALSE
+701.2229FALSE
+699.8607FALSE
+701.2229FALSE
+699.8638FALSE
+701.223FALSE
+699.8572FALSE
+701.2132FALSE
+699.8673FALSE
+701.2327FALSE
+699.043FALSE
+699.3271FALSE
+699.0419FALSE
+699.3271FALSE
+699.0442FALSE
+699.3272FALSE
+699.043FALSE
+699.3198FALSE
+699.0433FALSE
+699.3345FALSE
+698.8885FALSE
+718.2458FALSE
+698.8876FALSE
+718.2458FALSE
+698.8893FALSE
+718.2459FALSE
+698.89FALSE
+718.3631FALSE
+698.887FALSE
+718.1298FALSE
+698.7788FALSE
+698.511FALSE
+698.7782FALSE
+698.5109FALSE
+698.7793FALSE
+698.511FALSE
+698.7801FALSE
+698.5097FALSE
+698.5122FALSE
+698.7775FALSE
+698.6531FALSE
+698.4775FALSE
+698.4774FALSE
+698.6528FALSE
+698.4775FALSE
+698.6534FALSE
+698.4784FALSE
+698.6552FALSE
+698.4765FALSE
+698.651FALSE
+698.4881FALSE
+698.5297FALSE
+698.488FALSE
+698.5296FALSE
+698.4881FALSE
+698.5298FALSE
+698.4871FALSE
+698.5284FALSE
+698.489FALSE
+698.5309FALSE
+698.4761FALSE
+698.5026FALSE
+698.4761FALSE
+698.5025FALSE
+698.4762FALSE
+698.5027FALSE
+698.4759FALSE
+698.5017FALSE
+698.4771FALSE
+698.5036FALSE
+698.4754FALSE
+698.5202FALSE
+698.4753FALSE
+698.5201FALSE
+698.4754FALSE
+698.5202FALSE
+698.4763FALSE
+698.5222FALSE
+698.4755FALSE
+698.5181FALSE
+698.4749FALSE
+698.486FALSE
+698.4748FALSE
+698.4859FALSE
+698.4749FALSE
+698.4861FALSE
+698.4758FALSE
+698.487FALSE
+698.4747FALSE
+698.485FALSE
+698.473FALSE
+698.4729FALSE
+698.4694FALSE
+698.473FALSE
+698.4693FALSE
+698.4739FALSE
+698.4694FALSE
+698.472FALSE
+698.4693FALSE
+698.4649FALSE
+698.4704FALSE
+698.4649FALSE
+698.461FALSE
+698.465FALSE
+698.4609FALSE
+698.4659FALSE
+698.461FALSE
+698.464FALSE
+698.4619FALSE
+698.4561FALSE
+698.4602FALSE
+698.456FALSE
+698.4535FALSE
+698.4561FALSE
+698.4535FALSE
+698.457FALSE
+698.4535FALSE
+698.4552FALSE
+698.4525FALSE
+698.4504FALSE
+698.4545FALSE
+698.4504FALSE
+698.4513FALSE
+698.4504FALSE
+698.4513FALSE
+698.4506FALSE
+698.4513FALSE
+698.4511FALSE
+698.4503FALSE
+698.4489FALSE
+698.4523FALSE
+698.4489FALSE
+698.4514FALSE
+698.4489FALSE
+698.4514FALSE
+698.4492FALSE
+698.4514FALSE
+698.4498FALSE
+698.4538FALSE
+698.4524FALSE
+698.4538FALSE
+698.4505FALSE
+698.4538FALSE
+698.4482FALSE
+698.4548FALSE
+698.4482FALSE
+698.4529FALSE
+698.4482FALSE
+698.4488FALSE
+698.4484FALSE
+698.4488FALSE
+698.4479FALSE
+698.4488FALSE
+698.4493FALSE
+698.4481FALSE
+698.4486FALSE
+698.4481FALSE
+698.4477FALSE
+698.4481FALSE
+698.4477FALSE
+698.4478FALSE
+698.4477FALSE
+698.449FALSE
+698.448FALSE
+698.4478FALSE
+698.4475FALSE
+698.4478FALSE
+698.447FALSE
+698.4478FALSE
+698.447FALSE
+698.4481FALSE
+698.447FALSE
+698.4484FALSE
+698.4472FALSE
+698.4475FALSE
+698.4479FALSE
+698.4475FALSE
+698.4469FALSE
+698.4475FALSE
+698.4469FALSE
+698.4477FALSE
+698.4469FALSE
+698.4479FALSE
+698.4471FALSE
+698.447FALSE
+698.4473FALSE
+698.447FALSE
+698.4468FALSE
+698.447FALSE
+698.4468FALSE
+698.4473FALSE
+698.4468FALSE
+698.4473FALSE
+698.447FALSE
+698.4468FALSE
+698.447FALSE
+698.4468FALSE
+698.4467FALSE
+698.4468FALSE
+698.4467FALSE
+698.4471FALSE
+698.4467FALSE
+698.4471FALSE
+698.447FALSE
+698.4467FALSE
+698.4469FALSE
+698.4467FALSE
+698.4465FALSE
+698.4467FALSE
+698.4465FALSE
+698.4465FALSE
+698.447FALSE
+698.4468FALSE
+698.447FALSE
+698.4474FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4471FALSE
+698.4647FALSE
+698.4466FALSE
+698.4647FALSE
+698.4466FALSE
+698.4647FALSE
+698.4466FALSE
+698.4657FALSE
+698.4469FALSE
+698.4637FALSE
+698.4469FALSE
+698.4467FALSE
+698.4466FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4469FALSE
+698.4466FALSE
+698.4469FALSE
+698.4466FALSE
+698.4467FALSE
+698.4466FALSE
+698.4467FALSE
+698.4469FALSE
+698.4467FALSE
+698.4469FALSE
+$par
+smooth_log_cases_lag0.bw         time_ind_lag0.bw 
+                6.949885                -1.605831 
+
+$value
+[1] 698.4466
+
+$counts
+function gradient 
+      31       31 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+698.4467FALSE
+698.4467FALSE
+698.4467FALSE
+698.4469FALSE
+698.4469FALSE
+$par
+smooth_log_cases_lag1.bw         time_ind_lag0.bw 
+                5.498085                -1.605833 
+
+$value
+[1] 698.4467
+
+$counts
+function gradient 
+      42       42 
+
+$convergence
+[1] 0
+
+$message
+[1] "CONVERGENCE: REL_REDUCTION_OF_F <= FACTR*EPSMCH"
+
+> 
+> save(ssr_fit,
++     file=paste0("/home/ngr67a/2015-cdc-flu-competition/fit-competition-ssr-ph", prediction_horizon_limit, "-", data_set, ".Rdata"))
+> 
+> proc.time()
+   user  system elapsed 
+872.112   0.649 944.980 
