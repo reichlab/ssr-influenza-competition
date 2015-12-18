@@ -4,36 +4,39 @@ library(ggplot2)
 library(plyr)
 library(dplyr)
 library(reshape)
-library(ssr)
+library(ssrFlu)
+library(cdcfluview)
 
-for(location in c("sanjuan", "iquitos")) {
-#for(location in c("iquitos")) {
-#for(location in c("sanjuan")) {
+locations <- c("ili_national", paste0("ili_region", 1:10))
+pred_hzns <- 1:35
+
+for(location in locations) {
     ## collect fits for the given location
-    if(identical(location, "sanjuan")) {
-        location_for_ssr_fit_file <- "San_Juan"
-    } else {
-        location_for_ssr_fit_file <- "Iquitos"
-    }
-    
-    ssr_fits_by_prediction_horizon_limit <- lapply(seq(from=4, to=52, by=4),
+
+    ssr_fits_by_prediction_horizon_limit <- lapply(pred_hzns,
         function(phl) {
             file_name <- paste0(
-                "F:/Reich/dengue-ssr-prediction/competition-fits/fit-competition-ssr-ph",
+                "inst/estimation/2015-flu-competition/fit-competition-ssr-ph",
                 phl,
                 "-",
-                location_for_ssr_fit_file,
+                location,
                 ".Rdata")
             read_env <- new.env()
             load(file_name, envir=read_env)
             return(read_env$ssr_fit)
         })
-    names(ssr_fits_by_prediction_horizon_limit) <-
-        paste0("phl", seq(from=4, to=52, by=4))
+    names(ssr_fits_by_prediction_horizon_limit) <- paste0("phl", pred_hzns)
     
     ## assemble data set
-    if(identical(location, "sanjuan")) {
-        data <- San_Juan_test
+    
+    if(identical(location, "ili_national")) {
+        usflu <- get_flu_data("national", "ilinet", years=1997:2015)
+        data <- transmute(usflu,
+                          region.type = REGION.TYPE,
+                          region = REGION,
+                          year = YEAR,
+                          week = WEEK,
+                          total_cases = as.numeric(X..WEIGHTED.ILI))
     } else {
         data <- Iquitos_test
     }
