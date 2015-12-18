@@ -8,15 +8,15 @@ library(ssrFlu)
 library(cdcfluview)
 
 locations <- c("ili_national", paste0("ili_region", 1:10))
-pred_hzns <- 1:35
+pred_hzns <- 1:30
 
-for(location in locations) {
+##for(location in locations) {
+for(location in "ili_national")
     ## collect fits for the given location
-
     ssr_fits_by_prediction_horizon_limit <- lapply(pred_hzns,
         function(phl) {
             file_name <- paste0(
-                "inst/estimation/2015-flu-competition/fit-competition-ssr-ph",
+                "inst/estimation/2015-cdc-flu-competition/fit-competition-ssr-ph",
                 phl,
                 "-",
                 location,
@@ -35,24 +35,31 @@ for(location in locations) {
                           region.type = REGION.TYPE,
                           region = REGION,
                           year = YEAR,
-                          week = WEEK,
+                          season_week = WEEK,
+                          season = paste0(year, "/", year+1),
                           total_cases = as.numeric(X..WEIGHTED.ILI))
+        
+        ## subset is different than for estimation: adding 1 to index to account for rows removed for lag?
+        data <- data[(262+1):nrow(data),]
+        ## add time column
+        data$time_ind <- seq_len(nrow(data))
     } else {
         data <- Iquitos_test
     }
     
     ## add time column
-    data$time_ind <- seq_len(nrow(data))
+    ## data$time_ind <- seq_len(nrow(data))
     
     ## call function that outputs predictions to spreadsheets given ssr fits
-    n_sims <- 100000
-    outfile_path <- "F:/Reich/dengue-ssr-prediction/competition-predictions"
+    n_sims <- 10
+    outfile_path <- "inst/competition-predictions"
     
-    make_competition_forecasts_by_trajectory(
-        ssr_fits_by_prediction_horizon_limit=ssr_fits_by_prediction_horizon_limit,
+    make_competition_forecasts(
+        ssr_fits_by_prediction_horizon=ssr_fits_by_prediction_horizon_limit,
         n_sims=n_sims,
         data=data,
         outfile_path=outfile_path,
         location=location,
-        phase="test")
-}
+        last_obs_seasons = "2015/2016",
+        last_obs_week = 49)
+#}

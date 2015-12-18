@@ -4,18 +4,11 @@ make_competition_forecasts <- function(ssr_fits_by_prediction_horizon,
     n_sims,
     data,
     outfile_path,
-    location) {
+    location,
+    last_obs_seasons,
+    last_obs_weeks) {
     
     ## make a data frame with seasons and weeks at which we make predictions
-    
-    ## values used by competition organizers -- I think week 0 means week 52
-    ## of the previous season.
-    last_obs_seasons <- c("2005/2006",
-        "2006/2007",
-        "2007/2008",
-        "2008/2009")
-    
-    last_obs_weeks <- seq(from = 0, to = 48, by = 4)
     
     results <- expand.grid(last_obs_week=last_obs_weeks,
         last_obs_season=last_obs_seasons,
