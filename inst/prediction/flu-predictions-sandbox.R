@@ -42,8 +42,25 @@ if(identical(location, "ili_national")) {
                       season = paste0(year, "/", year+1),
                       total_cases = as.numeric(X..WEIGHTED.ILI))
     
-    ## subset is different than for estimation: adding 1 to index to account for rows removed for lag?
-    data <- data[(262+1):nrow(data),]
+	
+	## add log column
+	data$log_total_cases <- log(data$total_cases + 1)
+	
+	## add week_start_date
+	## note we changed reference to data$week in estimation file to data$season_week here
+	char_dates <- paste(data$year, data$season_week, "1")
+	data$week_start_date <- as.Date(char_dates, format="%Y %W %w")
+	
+	## remove week 53s
+	data <- data[-which(is.na(data$week_start_date)),]
+	## subset is different than for estimation: adding 1 to index to account for rows removed for lag?
+	data <- data[(262+1):nrow(data),]
+	
+	## add smooth log column -- or not, since it is already pretty smooth...
+	## (but this was done in estimation, so we need to do it here as well.)
+	sm <- loess(log_total_cases ~ as.numeric(week_start_date), data=data, span= 26 / nrow(data))
+	data$smooth_log_cases <- sm$fitted
+	
     ## add time column
     data$time_ind <- seq_len(nrow(data))
 } else {
@@ -61,6 +78,13 @@ max_lag <- max(unlist(ssr_fit$lags_hat))
 
 ## what are we predicting?
 prediction_data_inds <- (nrow(data)-max_lag) : nrow(data)
+
+## update theta_est in ssr_fit object to also contain parameter values that were held fixed
+## in this case, this includes only the period of the periodic kernel function
+if("time_ind_lag0" %in% names(ssr_fit$theta_hat)) {
+	ssr_fit$theta_hat$time_ind_lag0 <- c(ssr_fit$theta_hat$time_ind_lag0,
+		ssr_fit$ssr_control$theta_fixed$time_ind)
+}
 
 ## this adapted from challenge-predictions.R ~ lines 124-129
 tmp <- ssr_predict(ssr_fit,
