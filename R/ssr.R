@@ -997,7 +997,9 @@ compute_lagged_obs_vecs <- function(data,
     })
     
     ## drop specified rows
-    result <- result[-rows_to_drop, , drop=FALSE]
+	if(length(rows_to_drop) > 0) {
+	    result <- result[-rows_to_drop, , drop=FALSE]
+	}
     
     return(result)
 }
