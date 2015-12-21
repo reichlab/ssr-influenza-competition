@@ -92,3 +92,33 @@ tmp <- ssr_predict(ssr_fit,
                    leading_rows_to_drop=max(unlist(ssr_fit$lags_hat)),
                    prediction_horizon=pred_horizon,
                    normalize_weights=TRUE)
+			   
+			   
+			   
+## an example of use
+simulate_from_weighted_kde <- function(n, weighted_kde_fit) {
+	## get bandwidth
+	density_fit <- density(x=weighted_kde_fit$centers[, 1],
+		weights=weighted_kde_fit$weights,
+		bw="SJ")
+	
+	## get simulated values -- from a mixture of normals with sd=density_fit$bw
+	component_means <- sample(weighted_kde_fit$centers[, 1],
+		size=n,
+		replace=TRUE,
+		prob=weighted_kde_fit$weights)
+	
+	return(rnorm(n, component_means, density_fit$bw))
+}
+
+## draw simulated values from the distribution encoded as a weighted kernel density estimate in the tmp object
+## this uses the simulate_from_weighted_kde function above, which makes use of the
+##  - weights: vector of the weight assigned to each kernel center
+##  - centers: vector of centers for the kernels
+## the simulate_from_weighted_kde function uses R's built in "density" function to estimate the predictive distribution bandwidth
+sample <- simulate_from_weighted_kde(1000, tmp)
+
+par(mfrow = c(2, 1))
+plot(sample)
+hist(sample)
+
