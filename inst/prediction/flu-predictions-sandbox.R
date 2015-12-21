@@ -72,53 +72,63 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-pred_horizon <- 1
-ssr_fit <- ssr_fits_by_prediction_horizon_limit[[pred_horizon]]
-max_lag <- max(unlist(ssr_fit$lags_hat))
+nsim <- 1000
+pred_horizons <- 1:30
+#pred_horizons <- 1:10  THIS ONE WORKS.
+preds <- matrix(nrow=nsim*length(pred_horizons), ncol=3)
+colnames(preds) <- c("hzn", "sim", "ili")
+preds[,"hzn"] <- rep(pred_horizons, each=nsim)
+preds[,"ili"] <- rep(1:nsim, times=length(pred_horizons))
 
-## what are we predicting?
-prediction_data_inds <- (nrow(data)-max_lag) : nrow(data)
-
-## update theta_est in ssr_fit object to also contain parameter values that were held fixed
-## in this case, this includes only the period of the periodic kernel function
-if("time_ind_lag0" %in% names(ssr_fit$theta_hat)) {
-	ssr_fit$theta_hat$time_ind_lag0 <- c(ssr_fit$theta_hat$time_ind_lag0,
-		ssr_fit$ssr_control$theta_fixed$time_ind)
+for(i in 1:length(pred_horizons)){
+    message(paste("horizon", i))
+    pred_horizon <- pred_horizons[i]
+    ssr_fit <- ssr_fits_by_prediction_horizon_limit[[pred_horizon]]
+    max_lag <- max(unlist(ssr_fit$lags_hat))
+    
+    ## what are we predicting?
+    prediction_data_inds <- (nrow(data)-max_lag) : nrow(data)
+    
+    ## update theta_est in ssr_fit object to also contain parameter values that were held fixed
+    ## in this case, this includes only the period of the periodic kernel function
+    if("time_ind_lag0" %in% names(ssr_fit$theta_hat)) {
+        ssr_fit$theta_hat$time_ind_lag0 <- c(ssr_fit$theta_hat$time_ind_lag0,
+                                             ssr_fit$ssr_control$theta_fixed$time_ind)
+    }
+    
+    ## this adapted from challenge-predictions.R ~ lines 124-129
+    tmp <- ssr_predict(ssr_fit,
+                       prediction_data=data[prediction_data_inds, , drop=FALSE],
+                       leading_rows_to_drop=max(unlist(ssr_fit$lags_hat)),
+                       prediction_horizon=pred_horizon,
+                       normalize_weights=TRUE)
+    
+    idx <- which(preds[,"hzn"]==i)
+    preds[idx,"ili"] <- simulate_from_weighted_kde(1000, tmp)
 }
 
-## this adapted from challenge-predictions.R ~ lines 124-129
-tmp <- ssr_predict(ssr_fit,
-                   prediction_data=data[prediction_data_inds, , drop=FALSE],
-                   leading_rows_to_drop=max(unlist(ssr_fit$lags_hat)),
-                   prediction_horizon=pred_horizon,
-                   normalize_weights=TRUE)
-			   
-			   
-			   
-## an example of use
-simulate_from_weighted_kde <- function(n, weighted_kde_fit) {
-	## get bandwidth
-	density_fit <- density(x=weighted_kde_fit$centers[, 1],
-		weights=weighted_kde_fit$weights,
-		bw="SJ")
-	
-	## get simulated values -- from a mixture of normals with sd=density_fit$bw
-	component_means <- sample(weighted_kde_fit$centers[, 1],
-		size=n,
-		replace=TRUE,
-		prob=weighted_kde_fit$weights)
-	
-	return(rnorm(n, component_means, density_fit$bw))
-}
+preds_sum <- tbl_df(data.frame(preds)) %>%
+    group_by(hzn) %>%
+    summarize(median_ili = median(ili),
+              p05 = quantile(ili, .05),
+              p95 = quantile(ili, .95))
+
+
+ggplot(preds_sum, aes(x=hzn)) + 
+    geom_line(aes(y=median_ili)) +
+    geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2)
+
+
+
 
 ## draw simulated values from the distribution encoded as a weighted kernel density estimate in the tmp object
 ## this uses the simulate_from_weighted_kde function above, which makes use of the
 ##  - weights: vector of the weight assigned to each kernel center
 ##  - centers: vector of centers for the kernels
 ## the simulate_from_weighted_kde function uses R's built in "density" function to estimate the predictive distribution bandwidth
-sample <- simulate_from_weighted_kde(1000, tmp)
-
-par(mfrow = c(2, 1))
-plot(sample)
-hist(sample)
+# sample <- simulate_from_weighted_kde(1000, tmp)
+# 
+# par(mfrow = c(2, 1))
+# plot(sample)
+# hist(sample)
 
