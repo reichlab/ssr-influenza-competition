@@ -72,13 +72,14 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
+last_obs_week <- 49
 nsim <- 1000
 pred_horizons <- 1:30
 #pred_horizons <- 1:10  THIS ONE WORKS.
 preds <- matrix(nrow=nsim*length(pred_horizons), ncol=3)
 colnames(preds) <- c("hzn", "sim", "ili")
 preds[,"hzn"] <- rep(pred_horizons, each=nsim)
-preds[,"ili"] <- rep(1:nsim, times=length(pred_horizons))
+preds[,"sim"] <- rep(1:nsim, times=length(pred_horizons))
 
 for(i in 1:length(pred_horizons)){
     message(paste("horizon", i))
@@ -107,6 +108,35 @@ for(i in 1:length(pred_horizons)){
     preds[idx,"ili"] <- simulate_from_weighted_kde(1000, tmp)
 }
 
+
+preds_df <- tbl_df(data.frame(preds)) %>%
+    mutate(week = (last_obs_week + hzn - 1)%%52 + 1,
+           season_week = 201400 + 100*(week<30) + week)
+
+template_table <- data_frame(week=c(40:52, 1:20), season_week=c(201440:201452, 201501:201520))
+
+## calculuate peak week probabilities
+## need to include prior data too!
+peak_week <- preds_df %>% group_by(sim) %>%
+    summarize(peak_idx = which.max(ili),
+              week = (last_obs_week + peak_idx - 1)%%52 + 1) %>%
+    ungroup() %>% group_by(week) %>%
+    summarize(peak_wk_totals = n()) %>%
+    ungroup() %>% right_join(template_table) 
+
+## replace zeroes
+peak_week[is.na(peak_week)] <- 0
+peak_week <- peak_week %>%
+    mutate(peak_wk_totals = (peak_wk_totals+1),
+           peak_wk_prob = peak_wk_totals/sum(peak_wk_totals))
+
+
+    
+
+
+
+
+
 preds_sum <- tbl_df(data.frame(preds)) %>%
     group_by(hzn) %>%
     summarize(median_ili = median(ili),
@@ -114,12 +144,11 @@ preds_sum <- tbl_df(data.frame(preds)) %>%
               p95 = quantile(ili, .95))
 
 
-ggplot(preds_sum, aes(x=hzn)) + 
+ggplot(preds_sum, aes(x=season_week)) + 
     geom_line(aes(y=median_ili)) +
-    geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2)
-
-
-
+    geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2) + 
+    geom_line(data=data, aes(x=season_week))
+    
 
 ## draw simulated values from the distribution encoded as a weighted kernel density estimate in the tmp object
 ## this uses the simulate_from_weighted_kde function above, which makes use of the
