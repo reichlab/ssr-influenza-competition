@@ -6,6 +6,7 @@ library(dplyr)
 library(reshape)
 library(ssrFlu)
 library(cdcfluview)
+library(tidyr)
 
 locations <- c("ili_national", paste0("ili_region", 1:10))
 pred_hzns <- 1:30
@@ -73,6 +74,7 @@ if(identical(location, "ili_national")) {
 ##########################################
 
 last_obs_week <- 49
+last_obs_year <- 2015
 nsim <- 1000
 pred_horizons <- 1:30
 #pred_horizons <- 1:10  THIS ONE WORKS.
@@ -105,59 +107,160 @@ for(i in 1:length(pred_horizons)){
                        normalize_weights=TRUE)
     
     idx <- which(preds[,"hzn"]==i)
-    preds[idx,"ili"] <- simulate_from_weighted_kde(1000, tmp)
+    preds[idx,"ili"] <- simulate_from_weighted_kde(nsim, tmp)
 }
 
+upto_current_data_idx <- which(data$season=="2015/2016" & data$season_week==40):nrow(data)
+data_sims <- data_frame(week = rep(data[upto_current_data_idx, "season_week"], each=nsim), 
+                        sim = rep(1:nsim, times=length(upto_current_data_idx)),
+                        season_week = 201500 + 100*(week<30) + week,
+                        ili = rep(data[upto_current_data_idx, "total_cases"], each=nsim))
 
 preds_df <- tbl_df(data.frame(preds)) %>%
     mutate(week = (last_obs_week + hzn - 1)%%52 + 1,
-           season_week = 201400 + 100*(week<30) + week)
+           season_week = 201500 + 100*(week<30) + week) %>%
+    full_join(data_sims) %>%
+    mutate(week_date = as.Date(paste0(season_week,00), format="%Y%W%w")) %>%
+    arrange(season_week)
 
-template_table <- data_frame(week=c(40:52, 1:20), season_week=c(201440:201452, 201501:201520))
+#########################################
+## calculuate peak week probabilities  ##
+#########################################
 
-## calculuate peak week probabilities
-## need to include prior data too!
+template_table <- data_frame(week=c(40:52, 1:20), season_week=c(201540:201552, 201601:201620))
+
 peak_week <- preds_df %>% group_by(sim) %>%
     summarize(peak_idx = which.max(ili),
               week = (last_obs_week + peak_idx - 1)%%52 + 1) %>%
     ungroup() %>% group_by(week) %>%
     summarize(peak_wk_totals = n()) %>%
     ungroup() %>% right_join(template_table) 
-
 ## replace zeroes
 peak_week[is.na(peak_week)] <- 0
 peak_week <- peak_week %>%
     mutate(peak_wk_totals = (peak_wk_totals+1),
            peak_wk_prob = peak_wk_totals/sum(peak_wk_totals))
 
-
+write.csv(peak_week, file='inst/submissions/20151221-peak-week.csv')
     
+############################################
+## calculuate season onset probabilities  ##
+############################################
+
+## need to add no onset possibility?
+
+template_onsets <- data_frame(first_week_year = c(rep(2015, 13), rep(2016, 20)),
+                              first_week_num = c(40:52, 1:20))
+
+seasonal_baseline <- 2.1
+onsets <- preds_df %>% group_by(sim) %>%
+    mutate(ili_lag1 = lag(ili, 1),
+           ili_lag2 = lag(ili, 2),
+           ili_lag3 = lag(ili, 3),
+           onset = ili_lag1 > seasonal_baseline & ili_lag2 > seasonal_baseline & ili_lag3 > seasonal_baseline) %>%
+    filter(onset) %>% 
+    summarize(first_week = first(week_date, order_by=onset)-weeks(2)) %>%
+    ungroup() %>%
+    mutate(first_week_num = as.numeric(format(first_week, "%W"))+1,
+           first_week_year = as.numeric(format(first_week, "%Y"))) %>%
+    count(first_week_year, first_week_num) %>%
+    right_join(template_onsets)
+    
+onsets[is.na(onsets)] <- 0
+onsets <- onsets %>%
+    mutate(n = (n+1),
+           onset_prob = n/sum(n))
+
+write.csv(onsets, file='inst/submissions/20151221-onsets.csv')
 
 
 
+############################################
+## calculuate next 4 week ahead bins      ##
+############################################
+
+ili_breaks <- seq(.5, 13, by = .5)
+pred_bins <- preds_df %>%
+    filter(week_date <= as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w") + weeks(4),
+           week_date > as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w")) %>%
+    mutate(ili_bin=cut(ili, breaks=ili_breaks, right=FALSE)) %>%
+    count(week_date, ili_bin) %>%
+    spread(week_date, n)
+
+## NEED TO MAKE THIS BETTER
+pred_bins[is.na(pred_bins)] <- 1
+pred_bins_dodge <- rbind(rep(1, 5), 
+                         rep(1, 5), 
+                         pred_bins,
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5))
+for(i in 2:ncol(pred_bins_dodge)){
+    pred_bins_dodge[,i] <- pred_bins_dodge[,i]/sum(pred_bins_dodge[,i])
+}
+## need to make adjustment for zero predictions
+
+write.csv(pred_bins_dodge, file='inst/submissions/20151221-pred_bins.csv')
+
+## for point predictions 
+preds_df %>%
+    filter(week_date <= as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w") + weeks(4),
+           week_date > as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w")) %>%
+    group_by(week_date) %>%
+    summarize(median(ili))
 
 
-preds_sum <- tbl_df(data.frame(preds)) %>%
-    group_by(hzn) %>%
+######################
+## for peak height  ##
+######################
+
+peak_ht <- preds_df %>%
+    group_by(sim) %>%
+    summarize(peak_hts = max(ili)) %>%
+    mutate(peak_ht=cut(peak_hts, breaks=ili_breaks, right=FALSE)) %>%
+    count(peak_ht) 
+peak_height_dodge <- rbind(rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
+                           peak_ht,
+                           rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
+                           rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2))
+peak_height_dodge[,2] <- peak_height_dodge[,2]/sum(peak_height_dodge[,2])
+
+write.csv(peak_height_dodge, file='inst/submissions/20151221-peak-height.csv')
+
+preds_df %>%
+    group_by(sim) %>%
+    summarize(peak_hts = max(ili)) %>%
+    ungroup() %>% summarize(median(peak_hts))
+    
+    
+############################################
+## plot predictions sanity check          ##
+############################################
+
+preds_sum <- preds_df %>%
+    group_by(week_date) %>%
     summarize(median_ili = median(ili),
               p05 = quantile(ili, .05),
               p95 = quantile(ili, .95))
 
 
-ggplot(preds_sum, aes(x=season_week)) + 
+ggplot(preds_sum, aes(x=week_date)) + 
     geom_line(aes(y=median_ili)) +
-    geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2) + 
-    geom_line(data=data, aes(x=season_week))
+    geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2)
     
-
-## draw simulated values from the distribution encoded as a weighted kernel density estimate in the tmp object
-## this uses the simulate_from_weighted_kde function above, which makes use of the
-##  - weights: vector of the weight assigned to each kernel center
-##  - centers: vector of centers for the kernels
-## the simulate_from_weighted_kde function uses R's built in "density" function to estimate the predictive distribution bandwidth
-# sample <- simulate_from_weighted_kde(1000, tmp)
-# 
-# par(mfrow = c(2, 1))
-# plot(sample)
-# hist(sample)
-
