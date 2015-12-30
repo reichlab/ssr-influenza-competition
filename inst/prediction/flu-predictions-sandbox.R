@@ -73,7 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-last_obs_week <- 49
+filedate <- '20151229'
+last_obs_week <- 50
 last_obs_year <- 2015
 nsim <- 1000
 pred_horizons <- 1:30
@@ -130,8 +131,7 @@ preds_df <- tbl_df(data.frame(preds)) %>%
 template_table <- data_frame(week=c(40:52, 1:20), season_week=c(201540:201552, 201601:201620))
 
 peak_week <- preds_df %>% group_by(sim) %>%
-    summarize(peak_idx = which.max(ili),
-              week = (last_obs_week + peak_idx - 1)%%52 + 1) %>%
+    summarize(week = week[which.max(ili)]) %>%
     ungroup() %>% group_by(week) %>%
     summarize(peak_wk_totals = n()) %>%
     ungroup() %>% right_join(template_table) 
@@ -141,7 +141,7 @@ peak_week <- peak_week %>%
     mutate(peak_wk_totals = (peak_wk_totals+1),
            peak_wk_prob = peak_wk_totals/sum(peak_wk_totals))
 
-write.csv(peak_week, file='inst/submissions/20151221-peak-week.csv')
+write.csv(peak_week, file=paste0('inst/submissions/', filedate, '-peak-week.csv'))
     
 ############################################
 ## calculuate season onset probabilities  ##
@@ -171,7 +171,7 @@ onsets <- onsets %>%
     mutate(n = (n+1),
            onset_prob = n/sum(n))
 
-write.csv(onsets, file='inst/submissions/20151221-onsets.csv')
+write.csv(onsets, file=paste0('inst/submissions/', filedate, '-onsets.csv'))
 
 
 
@@ -208,15 +208,13 @@ pred_bins_dodge <- rbind(rep(1, 5),
                          rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
-                         rep(1, 5), 
-                         rep(1, 5), 
                          rep(1, 5))
 for(i in 2:ncol(pred_bins_dodge)){
     pred_bins_dodge[,i] <- pred_bins_dodge[,i]/sum(pred_bins_dodge[,i])
 }
 ## need to make adjustment for zero predictions
 
-write.csv(pred_bins_dodge, file='inst/submissions/20151221-pred_bins.csv')
+write.csv(pred_bins_dodge, file=paste0('inst/submissions/', filedate, '-pred_bins.csv'))
 
 ## for point predictions 
 preds_df %>%
@@ -238,10 +236,11 @@ peak_ht <- preds_df %>%
 peak_height_dodge <- rbind(rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
                            peak_ht,
                            rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
-                           rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2))
+                           rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), 
+                           rep(1, 2), rep(1, 2))
 peak_height_dodge[,2] <- peak_height_dodge[,2]/sum(peak_height_dodge[,2])
 
-write.csv(peak_height_dodge, file='inst/submissions/20151221-peak-height.csv')
+write.csv(peak_height_dodge, file=paste0('inst/submissions/', filedate, '-peak-height.csv'))
 
 preds_df %>%
     group_by(sim) %>%
