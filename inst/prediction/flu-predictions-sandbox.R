@@ -73,8 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20151229'
-last_obs_week <- 50
+filedate <- '20160105'
+last_obs_week <- 51
 last_obs_year <- 2015
 nsim <- 1000
 pred_horizons <- 1:30
@@ -164,11 +164,12 @@ onsets <- preds_df %>% group_by(sim) %>%
     mutate(first_week_num = as.numeric(format(first_week, "%W"))+1,
            first_week_year = as.numeric(format(first_week, "%Y"))) %>%
     count(first_week_year, first_week_num) %>%
-    right_join(template_onsets)
+    right_join(template_onsets) %>% ungroup()
     
 onsets[is.na(onsets)] <- 0
 onsets <- onsets %>%
     mutate(n = (n+1),
+           sumn=sum(n),
            onset_prob = n/sum(n))
 
 write.csv(onsets, file=paste0('inst/submissions/', filedate, '-onsets.csv'))
@@ -191,8 +192,8 @@ pred_bins <- preds_df %>%
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
                          rep(1, 5), 
-                         pred_bins,
                          rep(1, 5), 
+                         pred_bins,
                          rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
