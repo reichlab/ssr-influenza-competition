@@ -74,7 +74,8 @@ if(identical(location, "ili_national")) {
 ##########################################
 
 filedate <- '20160118'
-last_obs_year <- 2016
+last_obs_week <- 1
+last_obs_year <- 2015
 nsim <- 1000
 pred_horizons <- 1:30
 #pred_horizons <- 1:10  THIS ONE WORKS.
@@ -160,7 +161,7 @@ onsets <- preds_df %>% group_by(sim) %>%
     filter(onset) %>% 
     summarize(first_week = first(week_date, order_by=onset)-weeks(2)) %>%
     ungroup() %>%
-    mutate(first_week_num = as.numeric(format(first_week, "%W"))+1,
+    mutate(first_week_num = as.numeric(format(first_week, "%W")),
            first_week_year = as.numeric(format(first_week, "%Y"))) %>%
     count(first_week_year, first_week_num) %>%
     right_join(template_onsets) %>% ungroup()
