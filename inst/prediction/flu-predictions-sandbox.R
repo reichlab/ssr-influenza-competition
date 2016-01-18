@@ -75,7 +75,7 @@ if(identical(location, "ili_national")) {
 
 filedate <- '20160118'
 last_obs_week <- 1
-last_obs_year <- 2015
+last_obs_year <- 2016
 nsim <- 1000
 pred_horizons <- 1:30
 #pred_horizons <- 1:10  THIS ONE WORKS.
@@ -194,8 +194,10 @@ pred_bins <- preds_df %>%
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
                          rep(1, 5), 
-                         rep(1, 5), 
                          pred_bins,
+                         rep(1, 5), 
+                         rep(1, 5), 
+                         rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
@@ -219,8 +221,8 @@ write.csv(pred_bins_dodge, file=paste0('inst/submissions/', filedate, '-pred_bin
 
 ## for point predictions 
 preds_df %>%
-    filter(week_date <= as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w") + weeks(4),
-           week_date > as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w")) %>%
+    filter(week_date <= as.Date(paste0(last_obs_year, sprintf("%02d", last_obs_week), 00), format="%Y%W%w") + weeks(4),
+           week_date > as.Date(paste0(last_obs_year, sprintf("%02d", last_obs_week), 00), format="%Y%W%w")) %>%
     group_by(week_date) %>%
     summarize(median(ili))
 
@@ -234,11 +236,11 @@ peak_ht <- preds_df %>%
     summarize(peak_hts = max(ili)) %>%
     mutate(peak_ht=cut(peak_hts, breaks=ili_breaks, right=FALSE)) %>%
     count(peak_ht) 
-peak_height_dodge <- rbind(rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
+peak_height_dodge <- rbind(rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
                            peak_ht,
                            rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
                            rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), 
-                           rep(1, 2), rep(1, 2))
+                           rep(1, 2), rep(1, 2), rep(1, 2))
 peak_height_dodge[,2] <- peak_height_dodge[,2]/sum(peak_height_dodge[,2])
 
 write.csv(peak_height_dodge, file=paste0('inst/submissions/', filedate, '-peak-height.csv'))
