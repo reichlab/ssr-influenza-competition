@@ -73,9 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160108'
-last_obs_week <- 52
-last_obs_year <- 2015
+filedate <- '20160118'
+last_obs_year <- 2016
 nsim <- 1000
 pred_horizons <- 1:30
 #pred_horizons <- 1:10  THIS ONE WORKS.
@@ -182,8 +181,10 @@ write.csv(onsets, file=paste0('inst/submissions/', filedate, '-onsets.csv'))
 
 ili_breaks <- seq(.5, 13, by = .5)
 pred_bins <- preds_df %>%
-    filter(week_date <= as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w") + weeks(4),
-           week_date > as.Date(paste0(last_obs_year, last_obs_week, 00), format="%Y%W%w")) %>%
+    filter(week_date <= as.Date(paste0(last_obs_year, sprintf("%02d", last_obs_week), 00), 
+                                format="%Y%W%w") + weeks(4),
+           week_date > as.Date(paste0(last_obs_year, sprintf("%02d", last_obs_week), 00), 
+                               format="%Y%W%w")) %>%
     mutate(ili_bin=cut(ili, breaks=ili_breaks, right=FALSE)) %>%
     count(week_date, ili_bin) %>%
     spread(week_date, n)
