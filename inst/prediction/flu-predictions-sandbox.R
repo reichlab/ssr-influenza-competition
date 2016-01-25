@@ -73,8 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160118'
-last_obs_week <- 1
+filedate <- '20160125'
+last_obs_week <- 2
 last_obs_year <- 2016
 nsim <- 1000
 pred_horizons <- 1:30
@@ -195,7 +195,6 @@ pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
                          rep(1, 5), 
                          pred_bins,
-                         rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
