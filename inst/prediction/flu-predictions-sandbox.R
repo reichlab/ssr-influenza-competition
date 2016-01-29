@@ -73,8 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160125'
-last_obs_week <- 2
+filedate <- '20160129'
+last_obs_week <- 3
 last_obs_year <- 2016
 nsim <- 1000
 pred_horizons <- 1:30
@@ -193,8 +193,8 @@ pred_bins <- preds_df %>%
 ## NEED TO MAKE THIS BETTER
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
-                         rep(1, 5), 
                          pred_bins,
+                         rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
                          rep(1, 5), 
@@ -239,7 +239,7 @@ peak_height_dodge <- rbind(rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2)
                            peak_ht,
                            rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2),
                            rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), rep(1, 2), 
-                           rep(1, 2), rep(1, 2), rep(1, 2))
+                           rep(1, 2), rep(1, 2))
 peak_height_dodge[,2] <- peak_height_dodge[,2]/sum(peak_height_dodge[,2])
 
 write.csv(peak_height_dodge, file=paste0('inst/submissions/', filedate, '-peak-height.csv'))
