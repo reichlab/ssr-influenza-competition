@@ -73,8 +73,8 @@ if(identical(location, "ili_national")) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160219'
-last_obs_week <- 6
+filedate <- '20160226'
+last_obs_week <- 7
 last_obs_year <- 2016
 nsim <- 1000
 pred_horizons <- 1:30
