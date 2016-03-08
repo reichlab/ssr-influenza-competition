@@ -194,8 +194,8 @@ pred_bins <- preds_df %>%
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
     rep(1, 5), 
-    rep(1, 5), 
     pred_bins,
+    rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
