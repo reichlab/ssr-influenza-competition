@@ -273,8 +273,8 @@ for(prediction_horizon in seq_len(max_prediction_horizon)) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160325'
-last_obs_week <- 11
+filedate <- '20160401'
+last_obs_week <- 12
 last_obs_year <- 2016
 nsim <- 10000
 pred_horizons <- seq_len(ncol(trajectory_samples))
@@ -401,11 +401,7 @@ pred_bins <- preds_df %>%
 ## NEED TO MAKE THIS BETTER
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
-    rep(1, 5), 
     pred_bins,
-    rep(1, 5), 
-    rep(1, 5), 
-    rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
