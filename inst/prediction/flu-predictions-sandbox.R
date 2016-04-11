@@ -38,6 +38,7 @@ max_seasonal_lag <- 0L
 filtering <- FALSE
 differencing <- FALSE
 seasonality <- TRUE
+#bw_parameterization <- "diagonal"
 bw_parameterization <- "full"
 
 n_sims <- 10000
@@ -273,8 +274,8 @@ for(prediction_horizon in seq_len(max_prediction_horizon)) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160401'
-last_obs_week <- 12
+filedate <- '20160408'
+last_obs_week <- 13
 last_obs_year <- 2016
 nsim <- 10000
 pred_horizons <- seq_len(ncol(trajectory_samples))
