@@ -143,7 +143,7 @@ if(identical(data_set, "ili_national")) {
 }
 
 
-last_obs_week <- 11
+last_obs_week <- 13
 last_obs_year <- 2016
 analysis_time_ind <- which(data$year == last_obs_year & data$week == last_obs_week)
 analysis_time_season <- data$season[analysis_time_ind]
@@ -274,8 +274,8 @@ for(prediction_horizon in seq_len(max_prediction_horizon)) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160408'
-last_obs_week <- 13
+filedate <- '20160415'
+last_obs_week <- 14
 last_obs_year <- 2016
 nsim <- 10000
 pred_horizons <- seq_len(ncol(trajectory_samples))
@@ -469,4 +469,4 @@ preds_sum <- preds_df %>%
 ggplot(preds_sum, aes(x=week_date)) + 
     geom_line(aes(y=median_ili)) +
     geom_ribbon(aes(ymin=p05, ymax=p95), alpha=.2)
-    
+
