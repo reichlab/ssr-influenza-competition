@@ -143,7 +143,7 @@ if(identical(data_set, "ili_national")) {
 }
 
 
-last_obs_week <- 16
+last_obs_week <- 17
 last_obs_year <- 2016
 analysis_time_ind <- which(data$year == last_obs_year & data$week == last_obs_week)
 analysis_time_season <- data$season[analysis_time_ind]
@@ -160,6 +160,15 @@ predictive_copula <- copula_fit@copula
 max_prediction_horizon <-
     last_analysis_time_season_week + 1 -
     analysis_time_season_week
+if(max_prediction_horizon < 4L) {
+    ## get the right copula for analysis_time_season_week
+    predictive_copula_ind <- which(analysis_time_season_week_by_copula_fit == analysis_time_season_week) -
+        (max_prediction_horizon - 4L)
+    copula_fit <- copula_fits[[predictive_copula_ind]]$copula_fit
+    predictive_copula <- copula_fit@copula
+    
+    max_prediction_horizon <- 4L
+}
 sim_sequences <- matrix(NA, nrow = n_sims, ncol = max_prediction_horizon)
 na_rows <- seq_len(n_sims)
 #    while(length(na_rows) > 0) {
@@ -274,8 +283,8 @@ for(prediction_horizon in seq_len(max_prediction_horizon)) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160429'
-last_obs_week <- 16
+filedate <- '20160506'
+last_obs_week <- 17
 last_obs_year <- 2016
 nsim <- 10000
 pred_horizons <- seq_len(ncol(trajectory_samples))
@@ -403,6 +412,8 @@ pred_bins <- preds_df %>%
 pred_bins[is.na(pred_bins)] <- 1
 pred_bins_dodge <- rbind(rep(1, 5), 
     pred_bins,
+    rep(1, 5), 
+    rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
     rep(1, 5), 
