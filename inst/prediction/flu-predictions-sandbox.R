@@ -143,7 +143,7 @@ if(identical(data_set, "ili_national")) {
 }
 
 
-last_obs_week <- 17
+last_obs_week <- 18
 last_obs_year <- 2016
 analysis_time_ind <- which(data$year == last_obs_year & data$week == last_obs_week)
 analysis_time_season <- data$season[analysis_time_ind]
@@ -163,7 +163,7 @@ max_prediction_horizon <-
 if(max_prediction_horizon < 4L) {
     ## get the right copula for analysis_time_season_week
     predictive_copula_ind <- which(analysis_time_season_week_by_copula_fit == analysis_time_season_week) -
-        (max_prediction_horizon - 4L)
+        (4L - max_prediction_horizon)
     copula_fit <- copula_fits[[predictive_copula_ind]]$copula_fit
     predictive_copula <- copula_fit@copula
     
@@ -283,8 +283,8 @@ for(prediction_horizon in seq_len(max_prediction_horizon)) {
 ## make something resembling a forecast ##
 ##########################################
 
-filedate <- '20160506'
-last_obs_week <- 17
+filedate <- '20160513'
+last_obs_week <- 18
 last_obs_year <- 2016
 nsim <- 10000
 pred_horizons <- seq_len(ncol(trajectory_samples))
