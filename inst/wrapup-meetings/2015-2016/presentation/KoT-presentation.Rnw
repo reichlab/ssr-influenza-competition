@@ -1,0 +1,114 @@
+\documentclass[10pt]{beamer}
+
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{wrapfig}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{natbib}
+\usepackage[overlay, absolute]{textpos}
+
+\usepackage{xmpmulti}
+
+%\usepackage{sansmathaccent}
+%\pdfmapfile{+sansmathaccent.map}
+
+\include{GrandMacros}
+\newcommand{\ind}{\mathbb{I}}
+
+\usetheme{default}
+\useinnertheme{default}
+\setbeamertemplate{itemize items}[default]
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{section in toc}[circle]
+\setbeamertemplate{subsection in toc}[circle]
+\usecolortheme{seahorse}
+
+\title[Kernel of Truth]{Team Kernel of Truth -- Influenza Forecasting Discussion}
+\author{Evan Ray}
+\institute[]{University of Massachusetts - Amherst}
+\date{August 31 - September 1 2016}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\DeclareGraphicsRule{*}{png}{*}{}
+
+\definecolor{light-gray}{gray}{0.95}
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\lstset{basicstyle=\ttfamily\scriptsize, numberblanklines=false, numbers=none, stepnumber=1, numberstyle=\tiny, numbersep=10pt, breaklines=true, tabsize=2, language=R, commentstyle=\color{dkgreen}}
+
+\setlength{\TPHorizModule}{1cm}
+\setlength{\TPVertModule}{1cm}
+
+<<echo = FALSE, warning = FALSE, message = FALSE>>=
+library("knitr")
+opts_chunk$set(echo = FALSE, fig.path = "Plots/")
+
+library("ggplot2")
+library("grid")
+library("plyr")
+library("dplyr")
+library("tidyr")
+@
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}{}
+\begin{picture}(320,250)
+\put(30,-10){\includegraphics<1->[height=9.25cm]{Plots/kot_score_plots_US_only.pdf}}
+\end{picture}
+\end{frame}
+
+\begin{frame}{Summary of Results for National Predictions}
+\includegraphics<1->[width=11cm]{Plots/influenza-prediction-results.png}
+\end{frame}
+
+\begin{frame}{Overview of Method}
+\begin{enumerate}
+\item Use kernel conditional density estimation (KCDE) to obtain separate predictive distributions for incidence in each future week.
+\item Use copulas to combine these individual distributions to get joint predictive distribution for the trajectory of incidence over the rest of the season.
+\item Obtain predictive distributions for onset week, peak ILI, and peak week from this joint predictive distribution.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{More detail about KCDE}
+\begin{picture}(320,250)
+\put(-17,182){\includegraphics<1->[height=2.5cm,width=12cm]{Plots/moa-overview.png}}
+\put(-27,10){\includegraphics<1->[height=6cm,width=6.5cm]{Plots/x-space-kernel.pdf}}
+\put(163,40){\includegraphics<1->[height=4cm,width=6.25cm]{Plots/weighted-kde.pdf}}
+\end{picture}
+\end{frame}
+
+\begin{frame}{(Slightly) more detail about copulas}
+\begin{itemize}
+\item Sklar's Theorem: For any random vector $(X_1, \ldots, X_D)$, there exists a function $C$ such that $F_{X_1, \ldots, X_D}(x_1, \ldots, x_D) = C\{F_{X_1}(x_1), \ldots, F_{X_D}(x_d)\}$
+\item We have used the parametric specification for $C$ that arises in a multivariate normal distribution
+\end{itemize}
+\includegraphics<1->[scale=0.8]{Plots/copulas-1-eps-converted-to.pdf}
+\end{frame}
+
+\begin{frame}{A Weakness: The Christmas Effect}
+\begin{itemize}
+\item Our method did not capture the Christmas effect:
+\end{itemize}
+\includegraphics<1->[width=14cm, height=7cm]{Plots/christmas-effect.pdf}
+\end{frame}
+
+\begin{frame}{Future Directions}
+\begin{itemize}
+\item Participate fully (all regions, consistent model formulation throughout)
+\item Ensembles to combine models with varying strength at different points in the season
+  \begin{itemize}
+  \item (Unconditional) KDE near the beginning of the season?
+  \item SARIMA near Christmas?
+  \item KCDE+copulas elsewhere?
+  \end{itemize}
+\item We have some other ideas, but won't get to them by the start of the next round...
+\end{itemize}
+\end{frame}
+
+\end{document}
