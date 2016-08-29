@@ -27,7 +27,7 @@
 
 \title[Kernel of Truth]{Team Kernel of Truth -- Influenza Forecasting Discussion}
 \author{Evan Ray}
-\institute[]{University of Massachusetts - Amherst}
+\institute[]{Department of Biostatistics and Epidemiology \\ University of Massachusetts - Amherst}
 \date{August 31 - September 1 2016}
 
 \begin{document}
@@ -73,6 +73,9 @@ library("tidyr")
 \item Use copulas to combine these individual distributions to get joint predictive distribution for the trajectory of incidence over the rest of the season.
 \item Obtain predictive distributions for onset week, peak ILI, and peak week from this joint predictive distribution.
 \end{enumerate}
+\begin{small}
+Article under review, draft pdf at http://tinyurl.com/j5o7uf7
+\end{small}
 \end{frame}
 
 \begin{frame}{More detail about KCDE}
@@ -80,7 +83,16 @@ library("tidyr")
 \put(-17,182){\includegraphics<1->[height=2.5cm,width=12cm]{Plots/moa-overview.png}}
 \put(-27,10){\includegraphics<1->[height=6cm,width=6.5cm]{Plots/x-space-kernel.pdf}}
 \put(163,40){\includegraphics<1->[height=4cm,width=6.25cm]{Plots/weighted-kde.pdf}}
+\put(163, 24){\begin{tiny}Viboud et al., Prediction of the spread of influenza epidemics by the\end{tiny}}
+\put(166, 20){\begin{tiny}method of analogues. American Journal of Epidemiology, 2003.\end{tiny}}
 \end{picture}
+\end{frame}
+
+\begin{frame}{Motivation for Copulas}
+\begin{itemize}
+\item We need to capture dependence in incidence across different horizons to get at things like onset timing, peak timing.
+\end{itemize}
+\includegraphics<1->[height=4cm,width=10cm]{Plots/copulas-motivation.pdf}
 \end{frame}
 
 \begin{frame}{(Slightly) more detail about copulas}
