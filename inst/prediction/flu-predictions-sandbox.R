@@ -43,6 +43,7 @@ bw_parameterization <- "full"
 
 n_sims <- 10000
 
+## these are pointers to files in article-disease-pred-with-kcde repo
 copula_save_path <- file.path("/media/evan/data/Reich/infectious-disease-prediction-with-kcde/inst/results",
     data_set,
     "copula-estimation-results")
